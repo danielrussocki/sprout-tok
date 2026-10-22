@@ -1,22 +1,22 @@
 # Tareas: prototipo inicial de Sprout Tok
 
-- [ ] 01. Preparar la ejecución de pruebas unitarias con Vitest.
+- [x] 01. Preparar la ejecución de pruebas unitarias con Vitest.
   - **RF:** RF-1 a RF-7.
   - **Hecho cuando:** el proyecto ejecuta todas las pruebas unitarias con un único comando documentado.
 
-- [ ] 02. Definir los tipos del dominio: coordenada, dirección, personaje, parcela, árbol, cultivo, inventario y acción transitoria.
+- [x] 02. Definir los tipos del dominio: coordenada, dirección, personaje, parcela, árbol, cultivo, inventario y acción transitoria.
   - **RF:** RF-1 a RF-7.
   - **Hecho cuando:** el estado del juego y sus entidades se pueden representar sin tipos implícitos ni datos de interfaz.
 
-- [ ] 03. Crear la función de partida nueva con un mapa delimitado y parcelas de tierra, césped y posiciones iniciales.
+- [x] 03. Crear la función de partida nueva con un mapa delimitado y parcelas de tierra, césped y posiciones iniciales.
   - **RF:** RF-1.
   - **Hecho cuando:** una partida nueva devuelve un mapa con dimensiones, parcelas transitables y objetivos iniciales.
 
-- [ ] 04. Implementar la asignación aleatoria de etapas iniciales con probabilidades 40/30/20/10.
+- [x] 04. Implementar la asignación aleatoria de etapas iniciales con probabilidades 40/30/20/10.
   - **RF:** RF-1.
   - **Hecho cuando:** con un valor aleatorio controlado se obtiene la etapa esperada en cada rango de probabilidad.
 
-- [ ] 05. Probar la creación de partida, los límites del mapa y la distribución de etapas iniciales.
+- [x] 05. Probar la creación de partida, los límites del mapa y la distribución de etapas iniciales.
   - **RF:** RF-1.
   - **Hecho cuando:** las pruebas cubren parcelas, límites y los cuatro rangos de distribución sin depender de aleatoriedad real.
 

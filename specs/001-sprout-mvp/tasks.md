@@ -136,6 +136,6 @@
   - **RF:** RF-3, RF-5, RF-6, RF-7 y requisitos no funcionales.
   - **Hecho cuando:** cada cambio persistente se guarda, el inventario y los mensajes en español se muestran, y la interfaz no contiene reglas de juego.
 
-- [ ] 35. Realizar la verificación manual del flujo completo y de los casos límite visuales.
+- [x] 35. Realizar la verificación manual del flujo completo y de los casos límite visuales.
   - **RF:** RF-1 a RF-7.
   - **Hecho cuando:** se valida manualmente clic y toque, desplazamiento, acciones, cancelación, riego, tala, cosecha, restauración y mensajes según la spec.

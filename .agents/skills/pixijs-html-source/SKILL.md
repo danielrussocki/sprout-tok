@@ -8,7 +8,7 @@ license: MIT
 
 > These sources rely on the experimental HTML-in-Canvas browser proposal and are marked EXPERIMENTAL in PixiJS v8. The browser API must be enabled or the texture uploader throws on first render; feature-detect with `canvas.requestPaint` before relying on it. The API may change between minor releases.
 
-Assumes familiarity with `pixijs-scene-sprite` and textures. These are texture *sources*, not display objects: wrap them in a `Sprite` (or `Texture`/`Mesh`) to put them on screen. Not available in Web Workers; a worker has no DOM to capture.
+Assumes familiarity with `pixijs-scene-sprite` and textures. These are texture _sources_, not display objects: wrap them in a `Sprite` (or `Texture`/`Mesh`) to put them on screen. Not available in Web Workers; a worker has no DOM to capture.
 
 ## Quick Start
 
@@ -34,7 +34,7 @@ sprite.position.set(app.screen.width / 2, app.screen.height / 2);
 app.stage.addChild(sprite);
 ```
 
-**Related skills:** `pixijs-scene-sprite` (display the texture), `pixijs-scene-mesh` (map onto geometry, `PerspectiveMesh`), `pixijs-scene-dom-container` (the opposite: overlay HTML *above* the canvas, outside the GPU pipeline), `pixijs-assets` (texture sources vs the loader/cache), `pixijs-environments` (no DOM in Web Workers).
+**Related skills:** `pixijs-scene-sprite` (display the texture), `pixijs-scene-mesh` (map onto geometry, `PerspectiveMesh`), `pixijs-scene-dom-container` (the opposite: overlay HTML _above_ the canvas, outside the GPU pipeline), `pixijs-assets` (texture sources vs the loader/cache), `pixijs-environments` (no DOM in Web Workers).
 
 ## Constructor options
 
@@ -42,20 +42,20 @@ Both sources extend `TextureSource`, so all `TextureSourceOptions` (`resolution`
 
 `HTMLSourceOptions` (live element):
 
-| Option             | Type               | Default | Description                                                                                                                                              |
-| ------------------ | ------------------ | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `resource`         | `Element`          | —       | Required. The live DOM element to render. Must be a direct child of the owning canvas, or the constructor throws.                                         |
-| `canvas`           | `HTMLSourceCanvas` | —       | The canvas that owns the element's layout subtree. Inferred from `resource.parentElement` when the element is a direct canvas child; pass it when inference is not possible. |
+| Option             | Type               | Default | Description                                                                                                                                                                                  |
+| ------------------ | ------------------ | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `resource`         | `Element`          | —       | Required. The live DOM element to render. Must be a direct child of the owning canvas, or the constructor throws.                                                                            |
+| `canvas`           | `HTMLSourceCanvas` | —       | The canvas that owns the element's layout subtree. Inferred from `resource.parentElement` when the element is a direct canvas child; pass it when inference is not possible.                 |
 | `autoLayout`       | `boolean`          | `true`  | Set the `layoutsubtree` attribute on the owning canvas. The browser only lays out and paints canvas children when it is present. Set `false` if you write `<canvas layoutsubtree>` yourself. |
-| `autoUpdate`       | `boolean`          | `true`  | Listen for the canvas `paint` event and re-upload when the element repaints. Set `false` for a static, captured-once texture.                             |
-| `autoRequestPaint` | `boolean`          | `true`  | Request one initial paint after construction. Set `false` and call `source.requestPaint()` yourself each frame for continuous animation.                  |
+| `autoUpdate`       | `boolean`          | `true`  | Listen for the canvas `paint` event and re-upload when the element repaints. Set `false` for a static, captured-once texture.                                                                |
+| `autoRequestPaint` | `boolean`          | `true`  | Request one initial paint after construction. Set `false` and call `source.requestPaint()` yourself each frame for continuous animation.                                                     |
 
 `ElementImageSourceOptions` (immutable snapshot):
 
-| Option       | Type           | Default | Description                                                                                                                            |
-| ------------ | -------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `resource`   | `ElementImage` | —       | Required. A snapshot from `canvas.captureElementImage(element)`.                                                                        |
-| `autoClose`  | `boolean`      | `false` | Call `snapshot.close()` when the source is destroyed. Leave `false` when the snapshot is shared with other sources, or you risk a use-after-free. |
+| Option      | Type           | Default | Description                                                                                                                                       |
+| ----------- | -------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `resource`  | `ElementImage` | —       | Required. A snapshot from `canvas.captureElementImage(element)`.                                                                                  |
+| `autoClose` | `boolean`      | `false` | Call `snapshot.close()` when the source is destroyed. Leave `false` when the snapshot is shared with other sources, or you risk a use-after-free. |
 
 Change the defaults for every `HTMLSource` through the static `HTMLSource.defaultOptions` object, for example `HTMLSource.defaultOptions.autoUpdate = false`.
 

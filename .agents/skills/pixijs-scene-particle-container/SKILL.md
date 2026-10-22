@@ -173,9 +173,7 @@ container.update();
 // Bulk add
 const batch = [];
 for (let i = 0; i < 5000; i++) {
-  batch.push(
-    new Particle({ texture, x: Math.random() * 800, y: Math.random() * 600 }),
-  );
+  batch.push(new Particle({ texture, x: Math.random() * 800, y: Math.random() * 600 }));
 }
 container.particleChildren.push(...batch);
 container.update();
@@ -263,7 +261,6 @@ container.addParticle(particle);
 
 `ParticleContainer` does not accept `Sprite` children. `addChild` throws an error. Particles must be `Particle` instances (or any object implementing `IParticle`), added via `addParticle`. This is a complete rework from v7, where `ParticleContainer` accepted `Sprite` children.
 
-
 ### [HIGH] Not setting boundsArea on ParticleContainer
 
 Wrong:
@@ -283,7 +280,6 @@ const container = new ParticleContainer({
 
 `ParticleContainer` returns empty bounds `(0, 0, 0, 0)` by default for performance. Without `boundsArea`, the container is culled as invisible when culling is active, and `containsPoint` always misses. Set `boundsArea` to the region your particles occupy.
 
-
 ### [HIGH] Using children instead of particleChildren
 
 Wrong:
@@ -302,7 +298,6 @@ console.log(container.particleChildren.length); // 1
 
 Particles are stored in the `particleChildren` array, not `children`. The standard `Container.children` array is empty on a `ParticleContainer`. All particle enumeration, counting, and manipulation must use `particleChildren` plus the `*Particle` methods.
 
-
 ### [MEDIUM] Do not use ParticleContainer as a normal container
 
 `ParticleContainer` contains particles, not display objects. If you need to group a particle system with a background sprite or UI overlay, wrap the `ParticleContainer` itself inside a plain `Container`:
@@ -311,7 +306,6 @@ Particles are stored in the `particleChildren` array, not `children`. The standa
 const world = new Container();
 world.addChild(backgroundSprite, particleContainer, uiLayer);
 ```
-
 
 ## API Reference
 

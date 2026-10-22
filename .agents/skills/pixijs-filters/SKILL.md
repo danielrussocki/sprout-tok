@@ -228,7 +228,6 @@ const filter = new Filter({
 
 v8 uses an options object. Shaders must be wrapped in `GlProgram.from()` or `GpuProgram.from()`. Uniforms are grouped in `resources` with explicit types. Textures are resources, not uniforms.
 
-
 ### [HIGH] Using @pixi/filter-\* packages for v8
 
 Wrong:
@@ -244,7 +243,6 @@ import { AdjustmentFilter } from "pixi-filters/adjustment";
 ```
 
 `@pixi/filter-*` packages are v7 only. For v8, the community filters package restructured to `pixi-filters/{name}`.
-
 
 ### [HIGH] Using too many filters without containerizing
 
@@ -264,7 +262,6 @@ Correct:
 container.filters = [new BlurFilter({ strength: 4 })];
 ```
 
-
 ### [HIGH] Using a blendRequired filter without useBackBuffer on WebGL
 
 Custom filters and most advanced community filters that set `blendRequired: true` sample the back buffer. On WebGL that only works if the renderer was initialized with `useBackBuffer: true`; otherwise PixiJS logs a warning and the filter silently falls back:
@@ -274,7 +271,6 @@ await app.init({ useBackBuffer: true });
 ```
 
 WebGPU enables the back buffer unconditionally, so this only affects WebGL.
-
 
 ### [MEDIUM] Not setting filterArea for known-size containers
 
@@ -286,7 +282,6 @@ import { Rectangle } from "pixi.js";
 container.filterArea = new Rectangle(0, 0, 800, 600);
 container.filters = [someFilter];
 ```
-
 
 ## API Reference
 

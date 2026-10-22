@@ -173,15 +173,10 @@ Path methods: `moveTo`, `lineTo`, `bezierCurveTo`, `quadraticCurveTo`, `arc`, `a
 
 ```ts
 // arc(cx, cy, radius, startAngle, endAngle, counterclockwise?)
-g.moveTo(80, 50)
-  .arc(50, 50, 30, 0, Math.PI)
-  .stroke({ width: 4, color: 0x2c3e50 });
+g.moveTo(80, 50).arc(50, 50, 30, 0, Math.PI).stroke({ width: 4, color: 0x2c3e50 });
 
 // arcTo(x1, y1, x2, y2, radius) — rounded corner between two line segments
-g.moveTo(150, 20)
-  .arcTo(200, 20, 200, 80, 20)
-  .lineTo(200, 80)
-  .stroke({ width: 2 });
+g.moveTo(150, 20).arcTo(200, 20, 200, 80, 20).lineTo(200, 80).stroke({ width: 2 });
 
 // arcToSvg(rx, ry, xAxisRotation, largeArcFlag, sweepFlag, x, y) — matches the SVG `A` command
 g.moveTo(250, 50).arcToSvg(40, 20, 0, 1, 0, 330, 50).stroke({ width: 2 });
@@ -451,7 +446,6 @@ const g = new Graphics().rect(0, 0, 100, 100).fill(0xff0000);
 
 v8 replaced "set style, draw, end" with "draw shape, then apply style". `beginFill`/`endFill` do not exist.
 
-
 ### [CRITICAL] Using old shape method names
 
 Wrong:
@@ -467,7 +461,6 @@ g.circle(50, 50, 25);
 ```
 
 All `draw*` methods were renamed in v8: `drawRect` → `rect`, `drawCircle` → `circle`, `drawEllipse` → `ellipse`, `drawPolygon` → `poly`, `drawRoundedRect` → `roundRect`, `drawStar` → `star`.
-
 
 ### [CRITICAL] Using lineStyle instead of stroke
 
@@ -485,7 +478,6 @@ g.rect(0, 0, 100, 100).stroke({ width: 2, color: 0xffffff });
 ```
 
 `lineStyle` was removed. Use `stroke()` after drawing the shape. The stroke options object accepts `width`, `color`, `alpha`, `cap`, `join`, `alignment`, `miterLimit`, and `pixelLine`.
-
 
 ### [HIGH] Using beginHole/endHole for holes
 
@@ -508,7 +500,6 @@ g.rect(0, 0, 100, 100).fill(0x00ff00).circle(50, 50, 20).cut();
 
 `beginHole`/`endHole` were replaced by `cut()`. Draw the outer shape, fill it, then draw the hole shape and call `cut()`.
 
-
 ### [HIGH] Using GraphicsGeometry instead of GraphicsContext
 
 Wrong:
@@ -528,7 +519,6 @@ const g2 = new Graphics(ctx);
 
 `GraphicsGeometry` was replaced by `GraphicsContext` in v8. There is no `.geometry` property.
 
-
 ### [HIGH] Destroying a shared GraphicsContext unexpectedly
 
 ```ts
@@ -541,7 +531,6 @@ g1.destroy({ context: true }); // g2 is left holding a destroyed context
 
 Destroying a shared `GraphicsContext` does not destroy the other `Graphics` using it, but they keep a reference to the now-destroyed context and stop updating or rendering correctly. When passing a context via the constructor, `destroy()` with no args preserves the context and detaches the instance from it; use `destroy({ context: false })` to be explicit. Only destroy the context when all sharing instances are done with it. A self-owned context (not passed via constructor) is still destroyed by `destroy()` with no args.
 
-
 ### [HIGH] Clearing and redrawing Graphics every frame
 
 Graphics are designed to be stable, not dynamic. Calling `clear()` and redrawing every frame rebuilds GPU geometry each time. For dynamic visuals:
@@ -552,7 +541,6 @@ Graphics are designed to be stable, not dynamic. Calling `clear()` and redrawing
 
 This is the opposite of HTML Canvas 2D, where redrawing each frame is normal. PixiJS tessellates shapes into GPU triangles, so initial draw is expensive but subsequent renders are fast. Treat `Graphics` more like SVG elements than canvas draw calls.
 
-
 ### [MEDIUM] Do not nest children inside a Graphics
 
 `Graphics` sets `allowChildren = false`. Adding children logs a deprecation warning and will be a hard error in a future version. Wrap multiple graphics alongside other leaves in a plain `Container`:
@@ -561,7 +549,6 @@ This is the opposite of HTML Canvas 2D, where redrawing each frame is normal. Pi
 const group = new Container();
 group.addChild(graphics, sprite);
 ```
-
 
 ## API Reference
 

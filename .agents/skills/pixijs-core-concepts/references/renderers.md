@@ -145,7 +145,12 @@ renderer.renderTarget.bind(saved); // replays without clearing
 const depthCopy = new Texture({
   source: new TextureSource({ width: 512, height: 512, format: "depth24plus-stencil8" }),
 });
-renderer.renderTarget.copyDepthTexture(target, depthCopy, { x: 0, y: 0 }, { width: 512, height: 512 });
+renderer.renderTarget.copyDepthTexture(
+  target,
+  depthCopy,
+  { x: 0, y: 0 },
+  { width: 512, height: 512 },
+);
 ```
 
 - `RenderTarget` takes WebGPU-style `colorAttachments`/`depthStencilAttachment` or the older `colorTextures`/`depth`/`stencil`/`depthStencilTexture` options. `colorTextures: 0` with `depth: true` makes a depth-only target.
@@ -249,11 +254,9 @@ await app.init({ preference: ["webgpu", "webgl"] });
 
 WebGPU is not yet available on all browsers. An array-form preference of only `['webgpu']` will fail init on unsupported browsers (no fallback). Always include `'webgl'` as a fallback unless you've verified WebGPU support upstream.
 
-
 ### [MEDIUM] Assuming CanvasRenderer supports everything
 
 CanvasRenderer does not support filters, masks beyond basic clipping, compressed textures, or custom shaders. It's intended as a last-resort for environments that can't run WebGL. If you need full feature parity, target WebGL or WebGPU.
-
 
 ### [MEDIUM] Calling render before init
 
@@ -274,7 +277,6 @@ app.renderer.render(app.stage);
 ```
 
 `app.renderer` is populated only after `init()` resolves. Any access before that is `undefined`.
-
 
 ## API Reference
 

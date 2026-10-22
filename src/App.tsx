@@ -3,5 +3,5 @@ export default function App() {
     <section>
       <canvas />
     </section>
-  )
+  );
 }

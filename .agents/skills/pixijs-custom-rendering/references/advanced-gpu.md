@@ -173,7 +173,13 @@ To draw into one slice or layer, pass the source itself as `target` and pick the
 ```ts
 import { TextureSource } from "pixi.js";
 
-const volume = new TextureSource({ width: 64, height: 64, depth: 64, format: "rgba8unorm", storage: true });
+const volume = new TextureSource({
+  width: 64,
+  height: 64,
+  depth: 64,
+  format: "rgba8unorm",
+  storage: true,
+});
 
 // bind this view to a texture_storage_3d<rgba8unorm, write> in your own compute pass
 const view = renderer.texture.getGpuSource(volume).createView();
@@ -223,7 +229,11 @@ const scratch = TexturePool.getOptimalTexture({
   scaleMode: "nearest",
 });
 
-const { width, height } = TexturePool.getOptimalSize(bounds.width, bounds.height, renderer.resolution);
+const { width, height } = TexturePool.getOptimalSize(
+  bounds.width,
+  bounds.height,
+  renderer.resolution,
+);
 
 TexturePool.returnTexture(scratch);
 ```

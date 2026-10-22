@@ -1,4 +1,4 @@
-import type { CropStage, GameMap, GameState, Parcel } from "./model";
+import type { Coordinate, CropStage, GameMap, GameState, InteractionTarget, Parcel } from "./model";
 
 const mapWidth = 8;
 const mapHeight = 6;
@@ -57,4 +57,44 @@ export function createNewGame(random: () => number = Math.random): GameState {
     ],
     inventory: { crop: 0 },
   };
+}
+
+function hasPosition(position: Coordinate, target: Coordinate): boolean {
+  return position.x === target.x && position.y === target.y;
+}
+
+function getParcelAt(game: GameState, position: Coordinate): Parcel | undefined {
+  return game.map.tiles.find((parcel) => hasPosition(parcel.position, position));
+}
+
+export function isOccupied(game: GameState, position: Coordinate): boolean {
+  return (
+    game.trees.some((tree) => hasPosition(tree.position, position)) ||
+    game.crops.some((crop) => hasPosition(crop.position, position))
+  );
+}
+
+export function isWalkable(game: GameState, position: Coordinate): boolean {
+  const parcel = getParcelAt(game, position);
+
+  return parcel?.walkable === true && !isOccupied(game, position);
+}
+
+export function getInteractionTargetAt(
+  game: GameState,
+  position: Coordinate,
+): InteractionTarget | undefined {
+  if (game.trees.some((tree) => hasPosition(tree.position, position))) {
+    return { kind: "tree", position };
+  }
+
+  if (game.crops.some((crop) => hasPosition(crop.position, position))) {
+    return { kind: "crop", position };
+  }
+
+  if (getParcelAt(game, position) !== undefined) {
+    return { kind: "parcel", position };
+  }
+
+  return undefined;
 }

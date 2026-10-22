@@ -1,7 +1,5 @@
+import { GameScreen } from "./ui/GameScreen";
+
 export default function App() {
-  return (
-    <section>
-      <canvas />
-    </section>
-  );
+  return <GameScreen />;
 }

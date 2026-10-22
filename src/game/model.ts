@@ -85,4 +85,5 @@ export interface GameState {
   destination?: Coordinate;
   pendingTarget?: InteractionTarget;
   activeAction?: ActiveAction;
+  message?: string;
 }

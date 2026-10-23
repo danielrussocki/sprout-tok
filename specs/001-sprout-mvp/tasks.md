@@ -139,3 +139,19 @@
 - [x] 35. Realizar la verificación manual del flujo completo y de los casos límite visuales.
   - **RF:** RF-1 a RF-7.
   - **Hecho cuando:** se valida manualmente clic y toque, desplazamiento, acciones, cancelación, riego, tala, cosecha, restauración y mensajes según la spec.
+
+- [ ] 36. Completar las pruebas de selección de destino y de interacción contextual.
+  - **RF:** RF-1, RF-2, RF-3.
+  - **Hecho cuando:** las pruebas verifican que la tierra cultivable se acepta según el flujo contextual, que una orden nueva durante una acción cancela la acción sin efecto y atiende solo la última orden, que no se inicia una segunda acción mientras haya una activa y que un objetivo sin parcela adyacente muestra el mensaje en español.
+
+- [ ] 37. Probar la selección de árboles que ya han desaparecido.
+  - **RF:** RF-5.
+  - **Hecho cuando:** después de normalizar el tiempo y retirar un árbol del mapa, seleccionarlo no inicia una tala ni altera el mapa.
+
+- [ ] 38. Completar las pruebas de crecimiento de cultivos iniciales y de aplicación diferida del riego.
+  - **RF:** RF-6.
+  - **Hecho cuando:** las pruebas confirman que cultivos iniciales en etapas 1, 2 y 3 requieren respectivamente tres, dos y un riegos válidos para alcanzar la etapa 4, y que un riego válido no cambia la etapa hasta completar sus tres segundos.
+
+- [ ] 39. Repetir la verificación completa de la spec y actualizar el veredicto de cumplimiento.
+  - **RF:** RF-1 a RF-7.
+  - **Hecho cuando:** las tareas 36 a 38 están cubiertas por pruebas aprobadas y la verificación manual confirma los criterios de finalización y todos los casos límite definidos.

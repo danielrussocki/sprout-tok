@@ -92,7 +92,7 @@ El sistema deberá generar árboles vivos de forma aleatoria en el mapa, sin imp
 
 - **Criterio de aceptación:** Cuando transcurran cinco minutos desde la última generación de árboles, el sistema deberá intentar generar un árbol nuevo.
 - **Criterio de aceptación:** Cuando el sistema genere un árbol nuevo, deberá situarlo aleatoriamente en una parcela de césped.
-- **Criterio de aceptación:** Cuando una parcela de césped candidata tenga una parcela de tierra de cultivo adyacente, el sistema no deberá generar un árbol en ella.
+- **Criterio de aceptación:** Cuando una parcela de césped candidata tenga una parcela de tierra de cultivo adyacente, ya sea ortogonal o diagonalmente, el sistema no deberá generar un árbol en ella.
 - **Criterio de aceptación:** Cuando una parcela de césped candidata impida que alguna zona transitable del mapa siga siendo accesible desde las demás zonas transitables, el sistema no deberá generar un árbol en ella.
 - **Criterio de aceptación:** Cuando existan varias parcelas de césped válidas, el sistema podrá generar árboles en parcelas adyacentes entre sí.
 - **Criterio de aceptación:** Cuando se genere un árbol nuevo, deberá estar vivo; el sistema no deberá generarlo reducido.
@@ -119,7 +119,7 @@ El sistema deberá generar árboles vivos de forma aleatoria en el mapa, sin imp
 - Cerrar el juego durante una acción de tres segundos: al volver, la acción deberá estar cancelada, el objetivo sin cambios y el personaje en `idle`.
 - No existir una parcela transitable adyacente a un objetivo: la interacción deberá ignorarse y deberá mostrarse un mensaje al jugador.
 - Transcurrir cinco minutos cuando ya existan cinco árboles, incluidos árboles reducidos pendientes de desaparecer: no deberá generarse otro árbol.
-- Transcurrir cinco minutos sin parcelas de césped válidas, porque todas son adyacentes a tierra de cultivo o bloquearían el acceso a una zona transitable: no deberá generarse un árbol.
+- Transcurrir cinco minutos sin parcelas de césped válidas, porque todas son adyacentes ortogonal o diagonalmente a tierra de cultivo o bloquearían el acceso a una zona transitable: no deberá generarse un árbol.
 - Generar un árbol junto a otro árbol cuando ambas parcelas cumplan las condiciones de generación: ambos árboles podrán permanecer adyacentes.
 
 ## Fuera de alcance

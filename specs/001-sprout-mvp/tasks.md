@@ -279,3 +279,19 @@
 - [x] 70. Realizar la verificación manual de la generación periódica de árboles y actualizar el veredicto de cumplimiento.
   - **RF:** RF-8.
   - **Hecho cuando:** se confirma que los árboles aparecen cada cinco minutos en césped válido, no bloquean accesos ni tierras de cultivo, respetan el máximo de cinco y se conservan correctamente tras cerrar y reabrir el juego.
+
+- [ ] 71. Extender la consulta pura de parcelas candidatas para excluir las cuatro diagonales respecto de tierra de cultivo.
+  - **RF:** RF-8.
+  - **Hecho cuando:** una parcela de césped se descarta si tiene tierra de cultivo al norte, este, sur, oeste o en cualquiera de las cuatro diagonales.
+
+- [ ] 72. Probar el filtrado de candidatas con las ocho posiciones adyacentes a tierra de cultivo.
+  - **RF:** RF-8.
+  - **Hecho cuando:** las pruebas unitarias rechazan las cuatro candidatas ortogonales y las cuatro diagonales, y conservan una candidata de césped fuera de esas ocho posiciones.
+
+- [ ] 73. Probar la generación periódica cuando las únicas candidatas de césped son diagonales a tierra de cultivo.
+  - **RF:** RF-8.
+  - **Hecho cuando:** al vencer un intervalo de cinco minutos no se crea ningún árbol, se registra el intento y la siguiente generación no se intenta antes de otros cinco minutos.
+
+- [ ] 74. Verificar manualmente que un árbol generado no queda en diagonal a una parcela de tierra de cultivo.
+  - **RF:** RF-8.
+  - **Hecho cuando:** con un mapa que contenga candidatas ortogonales, diagonales y válidas, solo se observa la generación en la candidata válida.

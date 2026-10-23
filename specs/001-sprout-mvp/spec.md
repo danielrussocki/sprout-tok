@@ -36,7 +36,7 @@ El sistema deberá permitir al jugador seleccionar un destino mediante clic o to
 - **Criterio de aceptación:** Mientras el personaje se desplaza, el sistema deberá mostrar `walking`.
 - **Criterio de aceptación:** Mientras el personaje se desplace entre su posición inicial y el destino, el sistema deberá actualizar su posición visual de forma continua a lo largo del recorrido, sin que aparezca directamente en el destino.
 - **Criterio de aceptación:** Cuando el personaje alcance su destino o no tenga un destino válido, el sistema deberá mostrar `idle`.
-- **Criterio de aceptación:** Cuando el jugador seleccione un nuevo destino u objetivo mientras el personaje se desplaza, el sistema deberá cancelar el destino y la interacción pendiente anteriores y atender únicamente la última selección.
+- **Criterio de aceptación:** Cuando el jugador seleccione un nuevo destino u objetivo mientras el personaje se desplaza, el sistema deberá cancelar el destino y la interacción pendiente anteriores, atender únicamente la última selección y recalcular el recorrido desde la posición visual actual del personaje. El desplazamiento deberá continuar de forma continua, sin regresar ni ajustarse al centro de una parcela, y deberá conservar el avance parcela por parcela hasta el nuevo destino o la parcela adyacente al objetivo.
 
 ### RF-3. Interacción contextual
 
@@ -95,7 +95,7 @@ El sistema deberá permitir cosechar un cultivo que haya alcanzado su estado cos
 
 ## Casos límite
 
-- Seleccionar repetidamente un destino vacío antes de llegar: solo deberá respetarse el último destino seleccionado.
+- Seleccionar repetidamente, incluso sobre el mismo destino vacío, antes de llegar: solo deberá respetarse el último destino seleccionado y el personaje deberá continuar desde su posición visual actual, sin regresar ni ajustarse al centro de la parcela que transita.
 - Seleccionar un objetivo no disponible, ocupado o inexistente: no deberá alterar el mapa ni iniciar una acción inválida.
 - Intentar regar una planta durante su enfriamiento de un minuto: el intento se ignorará y no alterará su crecimiento.
 - Seleccionar un cultivo en una parcela ya ocupada: no deberá crearse un cultivo adicional.

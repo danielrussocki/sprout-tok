@@ -179,3 +179,35 @@
 - [x] 45. Realizar la verificación manual del desplazamiento continuo y de la sustitución de órdenes durante una ruta.
   - **RF:** RF-2, RF-3.
   - **Hecho cuando:** se confirma con clic y toque que el personaje recorre visualmente cada tramo, solo atiende el último destino u objetivo seleccionado y no inicia una acción antes de llegar a la parcela adyacente.
+
+- [ ] 46. Extender el modelo de movimiento transitorio con posición continua, tramo activo, ruta restante y hora del último avance.
+  - **RF:** RF-2.
+  - **Hecho cuando:** el estado de ejecución puede conservar una posición continua independiente de la posición lógica por parcela y dicho estado no forma parte del guardado.
+
+- [ ] 47. Implementar el avance puro del movimiento hasta una hora recibida.
+  - **RF:** RF-2, RF-3.
+  - **Hecho cuando:** al avanzar hasta una hora, la lógica actualiza la posición continua, confirma como máximo las parcelas alcanzadas y resuelve la llegada o la interacción pendiente al finalizar la ruta.
+
+- [ ] 48. Implementar el recálculo de ruta desde la posición continua actual al sustituir un destino u objetivo.
+  - **RF:** RF-1, RF-2, RF-3.
+  - **Hecho cuando:** una ruta nueva inicia exactamente en la posición continua vigente, conserva los tramos posteriores por parcelas transitables y reemplaza la orden pendiente anterior.
+
+- [ ] 49. Actualizar el procesamiento de selección para avanzar el movimiento antes de cancelar la orden anterior.
+  - **RF:** RF-2, RF-3.
+  - **Hecho cuando:** una selección durante `walking` usa la posición calculada en el instante de la selección y una selección durante una acción conserva la cancelación definida para esa acción.
+
+- [ ] 50. Probar el avance continuo y el recálculo de rutas durante un tramo.
+  - **RF:** RF-1, RF-2, RF-3.
+  - **Hecho cuando:** las pruebas verifican redirección a un destino y a un objetivo a mitad de tramo, clics repetidos sobre el mismo destino y ausencia de salto o ajuste al centro de una parcela.
+
+- [ ] 51. Enviar pulsos de avance con la hora actual desde la capa de interfaz mientras exista movimiento activo.
+  - **RF:** RF-2.
+  - **Hecho cuando:** la interfaz invoca la regla pura de avance durante `walking` sin calcular rutas, posiciones ni llegadas por cuenta propia.
+
+- [ ] 52. Renderizar al personaje desde la posición continua calculada por la lógica.
+  - **RF:** RF-2.
+  - **Hecho cuando:** la escena muestra la posición continua del estado de movimiento y no reinicia la representación al sustituir una orden.
+
+- [ ] 53. Verificar manualmente la redirección continua con clic y toque.
+  - **RF:** RF-2, RF-3.
+  - **Hecho cuando:** al seleccionar otro destino u objetivo durante un tramo, incluso repetidamente el mismo destino, el personaje cambia de recorrido desde el punto visible actual, sin regresar ni ajustarse al centro de una parcela.

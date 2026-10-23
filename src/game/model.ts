@@ -99,6 +99,7 @@ export interface GameState {
   trees: Tree[];
   crops: Crop[];
   inventory: Inventory;
+  lastTreeGenerationAttemptAt: number;
   destination?: Coordinate;
   route?: Coordinate[];
   movement?: Movement;

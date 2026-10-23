@@ -19,6 +19,7 @@ export const saveStorageKey = `sprout-tok:save:v${saveVersion}`;
 export interface SaveData {
   version: typeof saveVersion;
   savedAt: number;
+  lastTreeGenerationAttemptAt: number;
   map: GameMap;
   character: Character;
   trees: Tree[];
@@ -30,6 +31,7 @@ export function createSaveData(game: GameState, savedAt: number): SaveData {
   return {
     version: saveVersion,
     savedAt,
+    lastTreeGenerationAttemptAt: game.lastTreeGenerationAttemptAt,
     map: {
       ...game.map,
       tiles: game.map.tiles.map(copyParcel),
@@ -68,20 +70,27 @@ export function restoreGame(
   const saveData = parseSaveData(serialized);
 
   if (saveData === undefined) {
-    return setResultMessage(createNewGame(random), resultMessages.invalidSave);
+    return setResultMessage(createNewGame(random, now), resultMessages.invalidSave);
   }
 
   return normalizeTime(
     {
       ...saveData,
       character: { ...saveData.character, state: "idle" },
+      lastTreeGenerationAttemptAt: saveData.lastTreeGenerationAttemptAt,
     },
     now,
+    random,
   );
 }
 
 function parseSaveValue(value: unknown): SaveData | undefined {
-  if (!isRecord(value) || value.version !== saveVersion || !isTimestamp(value.savedAt)) {
+  if (
+    !isRecord(value) ||
+    value.version !== saveVersion ||
+    !isTimestamp(value.savedAt) ||
+    !isTimestamp(value.lastTreeGenerationAttemptAt)
+  ) {
     return undefined;
   }
 
@@ -108,6 +117,7 @@ function parseSaveValue(value: unknown): SaveData | undefined {
   return {
     version: saveVersion,
     savedAt: value.savedAt,
+    lastTreeGenerationAttemptAt: value.lastTreeGenerationAttemptAt,
     map,
     character,
     trees,

@@ -1,9 +1,23 @@
-import type { Coordinate, CropStage, GameMap, GameState, InteractionTarget, Parcel } from "./model";
+import type {
+  Coordinate,
+  CropStage,
+  GameMap,
+  GameState,
+  GrassParcel,
+  InteractionTarget,
+  Parcel,
+} from "./model";
 
 const mapWidth = 8;
 const mapHeight = 6;
 
 const soilPositions = new Set(["1,1", "2,1", "1,2", "2,2"]);
+const adjacentOffsets: readonly Coordinate[] = [
+  { x: 0, y: -1 },
+  { x: 1, y: 0 },
+  { x: 0, y: 1 },
+  { x: -1, y: 0 },
+];
 
 function createMap(): GameMap {
   const tiles: Parcel[] = [];
@@ -39,7 +53,10 @@ export function getInitialCropStage(random: () => number): CropStage {
   return 4;
 }
 
-export function createNewGame(random: () => number = Math.random): GameState {
+export function createNewGame(
+  random: () => number = Math.random,
+  now: number = Date.now(),
+): GameState {
   return {
     map: createMap(),
     character: {
@@ -56,6 +73,7 @@ export function createNewGame(random: () => number = Math.random): GameState {
       { id: "crop-2", position: { x: 2, y: 1 }, stage: getInitialCropStage(random) },
     ],
     inventory: { crop: 0 },
+    lastTreeGenerationAttemptAt: now,
   };
 }
 
@@ -78,6 +96,107 @@ export function isWalkable(game: GameState, position: Coordinate): boolean {
   const parcel = getParcelAt(game, position);
 
   return parcel?.walkable === true && !isOccupied(game, position);
+}
+
+function getCoordinateKey(position: Coordinate): string {
+  return `${position.x},${position.y}`;
+}
+
+function getReachableWalkablePositions(
+  game: GameState,
+  start: Coordinate,
+  blockedPosition?: Coordinate,
+): Set<string> {
+  const reachablePositions = new Set<string>();
+  const pendingPositions = [start];
+
+  for (let index = 0; index < pendingPositions.length; index += 1) {
+    const current = pendingPositions[index];
+    const currentKey = getCoordinateKey(current);
+
+    if (
+      reachablePositions.has(currentKey) ||
+      (blockedPosition !== undefined && hasPosition(current, blockedPosition)) ||
+      !isWalkable(game, current)
+    ) {
+      continue;
+    }
+
+    reachablePositions.add(currentKey);
+
+    for (const offset of adjacentOffsets) {
+      pendingPositions.push({ x: current.x + offset.x, y: current.y + offset.y });
+    }
+  }
+
+  return reachablePositions;
+}
+
+export function doesTreePlacementPreserveWalkableConnections(
+  game: GameState,
+  position: Coordinate,
+): boolean {
+  const walkablePositions = game.map.tiles
+    .map((parcel) => parcel.position)
+    .filter((parcelPosition) => isWalkable(game, parcelPosition));
+
+  for (const start of walkablePositions) {
+    if (hasPosition(start, position)) {
+      continue;
+    }
+
+    const reachableBeforePlacement = getReachableWalkablePositions(game, start);
+    const reachableAfterPlacement = getReachableWalkablePositions(game, start, position);
+
+    for (const reachablePosition of reachableBeforePlacement) {
+      if (
+        reachablePosition !== getCoordinateKey(position) &&
+        !reachableAfterPlacement.has(reachablePosition)
+      ) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+export function getGrassParcelsWithoutAdjacentSoil(game: GameState): GrassParcel[] {
+  return game.map.tiles.filter(
+    (parcel): parcel is GrassParcel =>
+      parcel.kind === "grass" &&
+      ![
+        { x: parcel.position.x, y: parcel.position.y - 1 },
+        { x: parcel.position.x + 1, y: parcel.position.y },
+        { x: parcel.position.x, y: parcel.position.y + 1 },
+        { x: parcel.position.x - 1, y: parcel.position.y },
+      ].some((position) => getParcelAt(game, position)?.kind === "soil"),
+  );
+}
+
+export function generateTree(game: GameState, random: () => number): GameState {
+  if (game.trees.length >= 5) {
+    return game;
+  }
+
+  const candidates = getGrassParcelsWithoutAdjacentSoil(game).filter(
+    (parcel) =>
+      isWalkable(game, parcel.position) &&
+      doesTreePlacementPreserveWalkableConnections(game, parcel.position),
+  );
+
+  if (candidates.length === 0) {
+    return game;
+  }
+
+  const position = candidates[Math.floor(random() * candidates.length)].position;
+  const tree = {
+    id: `tree-${game.trees.length + 1}`,
+    position,
+    status: "available" as const,
+  };
+
+  return { ...game, trees: [...game.trees, tree] };
 }
 
 export function getInteractionTargetAt(

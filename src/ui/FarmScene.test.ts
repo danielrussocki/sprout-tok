@@ -1,6 +1,38 @@
 import { describe, expect, it } from "vitest";
+import type { Tree } from "../game/model";
+import { drawTrees } from "./FarmSceneTrees";
 import { createSelectionHandler } from "./FarmSceneSelection";
 import { characterVisuals, cropVisuals, tileVisuals, treeVisuals } from "./FarmSceneVisuals";
+
+function createRecordingGraphics() {
+  const circles: Array<[number, number, number]> = [];
+  const graphics = {
+    clear() {
+      return graphics;
+    },
+    rect() {
+      return graphics;
+    },
+    circle(x: number, y: number, radius: number) {
+      circles.push([x, y, radius]);
+      return graphics;
+    },
+    moveTo() {
+      return graphics;
+    },
+    lineTo() {
+      return graphics;
+    },
+    fill() {
+      return graphics;
+    },
+    stroke() {
+      return graphics;
+    },
+  };
+
+  return { graphics, circles };
+}
 
 describe("FarmScene visual vocabulary", () => {
   it("distinguishes grass, untilled soil, and tilled soil", () => {
@@ -53,5 +85,23 @@ describe("FarmScene selection", () => {
     select({ global: { x: 15, y: 16 }, pointerType: "mouse" });
 
     expect(selections).toEqual([]);
+  });
+});
+
+describe("FarmScene trees", () => {
+  it("draws a generated available tree on its grass parcel and removes it with the state", () => {
+    const generatedTree: Tree = {
+      id: "tree-generated-1",
+      position: { x: 3, y: 1 },
+      status: "available",
+    };
+    const withTree = createRecordingGraphics();
+    const withoutTree = createRecordingGraphics();
+
+    drawTrees(withTree.graphics, [generatedTree], (x, y) => ({ x: 16 + x * 72, y: 16 + y * 72 }));
+    drawTrees(withoutTree.graphics, [], (x, y) => ({ x: 16 + x * 72, y: 16 + y * 72 }));
+
+    expect(withTree.circles).toContainEqual([268, 114, treeVisuals.available.canopyRadius]);
+    expect(withoutTree.circles).not.toContainEqual([268, 114, treeVisuals.available.canopyRadius]);
   });
 });

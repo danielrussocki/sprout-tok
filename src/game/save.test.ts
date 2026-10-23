@@ -1,8 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { createSaveData, parseSaveData, restoreGame, saveVersion, serializeGame } from "./save";
 import { resultMessages } from "./messages";
-import { canWaterCrop, reducedTreeDurationMs, wateringCooldownMs } from "./time";
+import {
+  canWaterCrop,
+  reducedTreeDurationMs,
+  treeGenerationIntervalMs,
+  wateringCooldownMs,
+} from "./time";
 import { createNewGame } from "./world";
 
 describe("versioned game saves", () => {
@@ -62,6 +67,7 @@ describe("versioned game saves", () => {
     expect(saveData).toEqual({
       version: saveVersion,
       savedAt,
+      lastTreeGenerationAttemptAt: game.lastTreeGenerationAttemptAt,
       map: game.map,
       character: game.character,
       trees: game.trees,
@@ -96,6 +102,53 @@ describe("versioned game saves", () => {
 
     expect(parseSaveData(JSON.stringify(saveData))).toEqual(saveData);
   });
+
+  it("persists and restores the last tree generation attempt marker", () => {
+    const savedAt = 1_767_225_600_000;
+    const lastTreeGenerationAttemptAt = savedAt - 120_000;
+    const game = {
+      ...createNewGame(() => 0),
+      lastTreeGenerationAttemptAt,
+    };
+    const saveData = createSaveData(game, savedAt);
+
+    expect(saveData).toMatchObject({ lastTreeGenerationAttemptAt });
+    expect(parseSaveData(JSON.stringify(saveData))).toMatchObject({
+      lastTreeGenerationAttemptAt,
+    });
+    expect(restoreGame(JSON.stringify(saveData), savedAt).lastTreeGenerationAttemptAt).toBe(
+      lastTreeGenerationAttemptAt,
+    );
+  });
+
+  it.each([
+    (saveData: ReturnType<typeof createSaveData>) => {
+      const { lastTreeGenerationAttemptAt: _, ...saveWithoutMarker } = saveData;
+
+      return saveWithoutMarker;
+    },
+    (saveData: ReturnType<typeof createSaveData>) => ({
+      ...saveData,
+      lastTreeGenerationAttemptAt: -1,
+    }),
+  ])(
+    "safely discards saves without a valid tree generation attempt marker",
+    (createInvalidSave) => {
+      const savedAt = 1_767_225_600_000;
+      const serialized = JSON.stringify(
+        createInvalidSave(
+          createSaveData(
+            createNewGame(() => 0),
+            savedAt,
+          ),
+        ),
+      );
+      const restored = restoreGame(serialized, savedAt, () => 0.99);
+
+      expect(parseSaveData(serialized)).toBeUndefined();
+      expect(restored.message).toBe(resultMessages.invalidSave);
+    },
+  );
 
   it("restores valid persistent data while discarding transient character work", () => {
     const savedAt = 1_767_225_600_000;
@@ -198,10 +251,40 @@ describe("versioned game saves", () => {
     expect(canWaterCrop(restored.crops[0], now)).toBe(true);
   });
 
+  it("processes every elapsed tree generation interval when restoring", () => {
+    const savedAt = 0;
+    const elapsedIntervals = 3;
+    const random = vi.fn(() => 0);
+    const serialized = serializeGame(
+      createNewGame(() => 0, savedAt),
+      savedAt,
+    );
+
+    const restored = restoreGame(
+      serialized,
+      savedAt + treeGenerationIntervalMs * elapsedIntervals,
+      random,
+    );
+
+    expect(restored.lastTreeGenerationAttemptAt).toBe(
+      savedAt + treeGenerationIntervalMs * elapsedIntervals,
+    );
+    expect(restored.trees).toHaveLength(5);
+    expect(restored.trees.slice(-3)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ status: "available" }),
+        expect.objectContaining({ status: "available" }),
+        expect.objectContaining({ status: "available" }),
+      ]),
+    );
+    expect(random).toHaveBeenCalledTimes(elapsedIntervals);
+  });
+
   it("keeps timers progressing while the game is closed", () => {
     const savedAt = 1_767_225_600_000;
     const game = {
       ...createNewGame(() => 0),
+      lastTreeGenerationAttemptAt: savedAt,
       trees: [
         {
           id: "reduced-tree",
@@ -229,7 +312,7 @@ describe("versioned game saves", () => {
     expect(canWaterCrop(beforeCooldown.crops[0], savedAt + wateringCooldownMs - 1)).toBe(false);
     expect(canWaterCrop(atCooldown.crops[0], savedAt + wateringCooldownMs)).toBe(true);
     expect(beforeTreeRemoval.trees).toHaveLength(1);
-    expect(atTreeRemoval.trees).toEqual([]);
+    expect(atTreeRemoval.trees).toEqual([expect.objectContaining({ status: "available" })]);
   });
 
   it("starts a new game with a Spanish message when the save is invalid", () => {

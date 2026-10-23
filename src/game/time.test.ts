@@ -1,9 +1,106 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { canWaterCrop, normalizeTime } from "./time";
+import type { GameState } from "./model";
+import { canWaterCrop, normalizeTime, treeGenerationIntervalMs } from "./time";
 import { createNewGame } from "./world";
 
+function createGameAtTreeLimit(): GameState {
+  const game = createNewGame(() => 0, 0);
+
+  return {
+    ...game,
+    trees: Array.from({ length: 5 }, (_, index) => ({
+      id: `tree-${index + 1}`,
+      position: { x: index, y: 5 },
+      status: "available" as const,
+    })),
+  };
+}
+
+function createGameWithoutTreeCandidates(): GameState {
+  const game = createNewGame(() => 0, 0);
+
+  return {
+    ...game,
+    map: {
+      ...game.map,
+      tiles: game.map.tiles.map((parcel) =>
+        parcel.kind === "grass"
+          ? {
+              position: parcel.position,
+              kind: "soil" as const,
+              walkable: true as const,
+              tilled: false,
+            }
+          : parcel,
+      ),
+    },
+  };
+}
+
 describe("normalizeTime", () => {
+  it("generates a tree and records the attempt at the exact five-minute interval", () => {
+    const game = createNewGame(() => 0, 0);
+
+    const normalizedGame = normalizeTime(game, treeGenerationIntervalMs, () => 0);
+
+    expect(normalizedGame.lastTreeGenerationAttemptAt).toBe(treeGenerationIntervalMs);
+    expect(normalizedGame.trees).toHaveLength(3);
+    expect(normalizedGame.trees.at(-1)).toMatchObject({ status: "available" });
+  });
+
+  it("waits another five minutes after an attempt blocked by the tree limit", () => {
+    const game = createGameAtTreeLimit();
+
+    const afterFirstAttempt = normalizeTime(game, treeGenerationIntervalMs, () => 0);
+    const beforeNextAttempt = normalizeTime(
+      afterFirstAttempt,
+      treeGenerationIntervalMs * 2 - 1,
+      () => 0,
+    );
+    const afterNextAttempt = normalizeTime(
+      afterFirstAttempt,
+      treeGenerationIntervalMs * 2,
+      () => 0,
+    );
+
+    expect(afterFirstAttempt.lastTreeGenerationAttemptAt).toBe(treeGenerationIntervalMs);
+    expect(beforeNextAttempt).toBe(afterFirstAttempt);
+    expect(afterNextAttempt.lastTreeGenerationAttemptAt).toBe(treeGenerationIntervalMs * 2);
+    expect(afterNextAttempt.trees).toEqual(game.trees);
+  });
+
+  it("waits another five minutes after an attempt without valid candidates", () => {
+    const game = createGameWithoutTreeCandidates();
+    const random = vi.fn(() => 0);
+
+    const afterFirstAttempt = normalizeTime(game, treeGenerationIntervalMs, random);
+    const beforeNextAttempt = normalizeTime(
+      afterFirstAttempt,
+      treeGenerationIntervalMs * 2 - 1,
+      random,
+    );
+    const afterNextAttempt = normalizeTime(afterFirstAttempt, treeGenerationIntervalMs * 2, random);
+
+    expect(afterFirstAttempt.lastTreeGenerationAttemptAt).toBe(treeGenerationIntervalMs);
+    expect(afterFirstAttempt.trees).toEqual(game.trees);
+    expect(beforeNextAttempt).toBe(afterFirstAttempt);
+    expect(afterNextAttempt.lastTreeGenerationAttemptAt).toBe(treeGenerationIntervalMs * 2);
+    expect(afterNextAttempt.trees).toEqual(game.trees);
+    expect(random).not.toHaveBeenCalled();
+  });
+
+  it("processes every elapsed generation interval in chronological order", () => {
+    const game = createNewGame(() => 0, 0);
+    const random = vi.fn(() => 0);
+
+    const normalizedGame = normalizeTime(game, treeGenerationIntervalMs * 3, random);
+
+    expect(normalizedGame.lastTreeGenerationAttemptAt).toBe(treeGenerationIntervalMs * 3);
+    expect(normalizedGame.trees).toHaveLength(5);
+    expect(random).toHaveBeenCalledTimes(3);
+  });
+
   it("keeps a reduced tree before five minutes have elapsed", () => {
     const reducedAt = 1_000;
     const game = {

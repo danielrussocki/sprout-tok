@@ -9,6 +9,7 @@ const walkingGame: GameState = {
   trees: [],
   crops: [],
   inventory: { crop: 0 },
+  lastTreeGenerationAttemptAt: 0,
   route: [{ x: 1, y: 0 }],
   movement: {
     continuousPosition: { x: 0.5, y: 0 },

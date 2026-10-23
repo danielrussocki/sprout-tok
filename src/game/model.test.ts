@@ -63,6 +63,7 @@ describe("game domain model", () => {
       trees: Tree[];
       crops: Crop[];
       inventory: Inventory;
+      lastTreeGenerationAttemptAt: number;
       movement?: Movement;
       activeAction?: ActiveAction;
     }>();

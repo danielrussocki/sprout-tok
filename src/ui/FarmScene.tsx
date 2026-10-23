@@ -3,7 +3,8 @@ import { Graphics } from "pixi.js";
 import { useCallback } from "react";
 import type { CharacterState, Coordinate, GameState } from "../game/model";
 import { selectAtPointerPosition, type SelectionPointerEvent } from "./FarmSceneSelection";
-import { characterVisuals, cropVisuals, tileVisuals, treeVisuals } from "./FarmSceneVisuals";
+import { characterVisuals, cropVisuals, tileVisuals } from "./FarmSceneVisuals";
+import { drawTrees } from "./FarmSceneTrees";
 import { getCharacterVisualPosition } from "./movementInterpolation";
 
 extend({ Graphics });
@@ -100,32 +101,7 @@ function drawScene(graphics: Graphics, game: GameState) {
     }
   }
 
-  for (const tree of game.trees) {
-    const position = getCellPosition(tree.position.x, tree.position.y);
-    const centerX = position.x + cellSize / 2;
-    const centerY = position.y + cellSize / 2;
-    const visual = treeVisuals[tree.status];
-
-    graphics.rect(centerX - 6, centerY - 2, 12, 25).fill(visual.trunkColor);
-
-    if (tree.status === "available") {
-      graphics
-        .circle(centerX, centerY - 10, visual.canopyRadius)
-        .fill(visual.canopyColor)
-        .stroke({
-          color: 0x24552d,
-          width: 2,
-        });
-    } else {
-      graphics
-        .circle(centerX, centerY + 19, visual.stumpRadius)
-        .fill(visual.trunkColor)
-        .stroke({
-          color: 0x4f301e,
-          width: 2,
-        });
-    }
-  }
+  drawTrees(graphics, game.trees, getCellPosition);
 
   for (const crop of game.crops) {
     const position = getCellPosition(crop.position.x, crop.position.y);

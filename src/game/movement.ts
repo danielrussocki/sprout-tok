@@ -1,4 +1,5 @@
 import type { Coordinate, Direction, GameState, InteractionTarget } from "./model";
+import { getWalkableRoute } from "./navigation";
 
 function getDirectionTowards(origin: Coordinate, target: Coordinate): Direction | undefined {
   if (target.x === origin.x && target.y === origin.y - 1) {
@@ -29,6 +30,7 @@ export function assignDestination(
     ...game,
     character: { ...game.character, state: "walking" },
     destination: { ...destination },
+    route: getWalkableRoute(game, game.character.position, destination) ?? [],
   };
 
   if (pendingTarget === undefined) {
@@ -45,7 +47,17 @@ export function arriveAtDestination(game: GameState): GameState {
     return { ...game, character: { ...game.character, state: "idle" } };
   }
 
-  const position = { ...game.destination };
+  const position = { ...(game.route?.[0] ?? game.destination) };
+  const remainingRoute = game.route?.slice(1) ?? [];
+
+  if (remainingRoute.length > 0) {
+    return {
+      ...game,
+      character: { ...game.character, position, state: "walking" },
+      route: remainingRoute,
+    };
+  }
+
   const facing =
     game.pendingTarget === undefined
       ? game.character.facing
@@ -55,5 +67,6 @@ export function arriveAtDestination(game: GameState): GameState {
     ...game,
     character: { position, facing, state: "idle" },
     destination: undefined,
+    route: undefined,
   };
 }

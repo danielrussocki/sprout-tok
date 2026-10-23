@@ -20,6 +20,7 @@ function setIdle(game: GameState): GameState {
     ...game,
     character: { ...game.character, state: "idle" },
     destination: undefined,
+    route: undefined,
     pendingTarget: undefined,
   };
 }
@@ -109,9 +110,18 @@ export function selectPosition(game: GameState, position: Coordinate, now: numbe
 
   const adjacentParcel = findClosestWalkableAdjacentParcel(normalizedGame, position);
 
-  return adjacentParcel === undefined
-    ? reportUnreachableTarget(setIdle(normalizedGame))
-    : assignDestination(normalizedGame, adjacentParcel, target);
+  if (adjacentParcel === undefined) {
+    return reportUnreachableTarget(setIdle(normalizedGame));
+  }
+
+  if (
+    adjacentParcel.x === normalizedGame.character.position.x &&
+    adjacentParcel.y === normalizedGame.character.position.y
+  ) {
+    return beginInteraction(normalizedGame, target, now, `action-${now}`);
+  }
+
+  return assignDestination(normalizedGame, adjacentParcel, target);
 }
 
 export function arriveForInteraction(
@@ -122,5 +132,7 @@ export function arriveForInteraction(
   const arrivedGame = arriveAtDestination(game);
   const target = arrivedGame.pendingTarget;
 
-  return target === undefined ? arrivedGame : beginInteraction(arrivedGame, target, now, actionId);
+  return target === undefined || arrivedGame.destination !== undefined
+    ? arrivedGame
+    : beginInteraction(arrivedGame, target, now, actionId);
 }

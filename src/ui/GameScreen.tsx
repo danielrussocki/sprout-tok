@@ -4,12 +4,10 @@ import { completeAction } from "../game/actions";
 import { arriveForInteraction, selectPosition } from "../game/commands";
 import type { Coordinate } from "../game/model";
 import { restoreGame, saveStorageKey, serializeGame } from "../game/save";
-import { getWalkableRouteDistance } from "../game/navigation";
 import { FarmScene } from "./FarmScene";
 import { farmSceneSize } from "./FarmSceneVisuals";
+import { getNextArrivalDelay } from "./movementArrival";
 import { StatusPanel } from "./StatusPanel";
-
-const movementDurationPerTileMs = 350;
 
 function loadGame() {
   return restoreGame(localStorage.getItem(saveStorageKey), Date.now());
@@ -24,18 +22,19 @@ export function GameScreen() {
   }, [game]);
 
   useEffect(() => {
-    if (game.destination === undefined) {
+    const arrivalDelay = getNextArrivalDelay(game);
+    const nextRoutePosition = game.route?.[0];
+
+    if (arrivalDelay === undefined || nextRoutePosition === undefined) {
       return;
     }
 
-    const routeDistance = getWalkableRouteDistance(game, game.character.position, game.destination);
-    const delay = (routeDistance ?? 0) * movementDurationPerTileMs;
-    const destination = game.destination;
     const timeoutId = window.setTimeout(() => {
       setGame((currentGame) => {
         if (
-          currentGame.destination?.x !== destination.x ||
-          currentGame.destination?.y !== destination.y
+          currentGame.character.state !== "walking" ||
+          currentGame.route?.[0]?.x !== nextRoutePosition.x ||
+          currentGame.route?.[0]?.y !== nextRoutePosition.y
         ) {
           return currentGame;
         }
@@ -43,7 +42,7 @@ export function GameScreen() {
         actionSequence.current += 1;
         return arriveForInteraction(currentGame, Date.now(), `action-${actionSequence.current}`);
       });
-    }, delay);
+    }, arrivalDelay);
 
     return () => window.clearTimeout(timeoutId);
   }, [game]);

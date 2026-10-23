@@ -17,26 +17,52 @@ export function getWalkableRouteDistance(
   start: Coordinate,
   destination: Coordinate,
 ): number | undefined {
-  const pendingPositions = [{ position: start, distance: 0 }];
+  const route = getWalkableRoute(game, start, destination);
+
+  return route?.length;
+}
+
+export function getWalkableRoute(
+  game: GameState,
+  start: Coordinate,
+  destination: Coordinate,
+): Coordinate[] | undefined {
+  const pendingPositions = [start];
   const visitedPositions = new Set([getCoordinateKey(start)]);
+  const previousPositions = new Map<string, Coordinate>();
 
   for (let index = 0; index < pendingPositions.length; index += 1) {
     const current = pendingPositions[index];
 
-    if (current.position.x === destination.x && current.position.y === destination.y) {
-      return current.distance;
+    if (current.x === destination.x && current.y === destination.y) {
+      const route: Coordinate[] = [];
+      let routePosition = current;
+
+      while (routePosition.x !== start.x || routePosition.y !== start.y) {
+        route.unshift({ ...routePosition });
+        const previousPosition = previousPositions.get(getCoordinateKey(routePosition));
+
+        if (previousPosition === undefined) {
+          return undefined;
+        }
+
+        routePosition = previousPosition;
+      }
+
+      return route;
     }
 
     for (const offset of adjacentOffsets) {
       const nextPosition = {
-        x: current.position.x + offset.x,
-        y: current.position.y + offset.y,
+        x: current.x + offset.x,
+        y: current.y + offset.y,
       };
       const key = getCoordinateKey(nextPosition);
 
       if (!visitedPositions.has(key) && isWalkable(game, nextPosition)) {
         visitedPositions.add(key);
-        pendingPositions.push({ position: nextPosition, distance: current.distance + 1 });
+        previousPositions.set(key, current);
+        pendingPositions.push(nextPosition);
       }
     }
   }

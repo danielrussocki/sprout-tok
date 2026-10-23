@@ -2,7 +2,18 @@ import { describe, expect, it } from "vitest";
 
 import { completeAction } from "./actions";
 import { arriveForInteraction, selectPosition } from "./commands";
+import type { GameState } from "./model";
 import { createNewGame } from "./world";
+
+function arriveAtFinalDestination(game: GameState, now: number, actionId?: string): GameState {
+  let updatedGame = game;
+
+  while (updatedGame.destination !== undefined) {
+    updatedGame = arriveForInteraction(updatedGame, now, actionId);
+  }
+
+  return updatedGame;
+}
 
 describe("game commands", () => {
   it("assigns a valid empty destination", () => {
@@ -18,7 +29,7 @@ describe("game commands", () => {
     const game = createNewGame(() => 0);
 
     const selectedGame = selectPosition(game, { x: 4, y: 1 }, 1_000);
-    const arrivedGame = arriveForInteraction(selectedGame, 1_350);
+    const arrivedGame = arriveAtFinalDestination(selectedGame, 1_350);
 
     expect(selectedGame.destination).toEqual({ x: 4, y: 0 });
     expect(arrivedGame.character).toMatchObject({
@@ -33,12 +44,80 @@ describe("game commands", () => {
     });
   });
 
+  it("starts watering immediately when already adjacent to an eligible crop", () => {
+    const game = {
+      ...createNewGame(() => 0),
+      character: { position: { x: 1, y: 0 }, facing: "south" as const, state: "idle" as const },
+    };
+
+    const updatedGame = selectPosition(game, { x: 1, y: 1 }, 1_000);
+
+    expect(updatedGame.character.state).toBe("watering");
+    expect(updatedGame.destination).toBeUndefined();
+    expect(updatedGame.route).toBeUndefined();
+    expect(updatedGame.pendingTarget).toBeUndefined();
+    expect(updatedGame.activeAction).toEqual({
+      id: "action-1000",
+      kind: "watering",
+      target: { x: 1, y: 1 },
+      completesAt: 4_000,
+    });
+  });
+
+  it("reports an unavailable watering action immediately when already adjacent", () => {
+    const game = {
+      ...createNewGame(() => 0),
+      character: { position: { x: 1, y: 0 }, facing: "south" as const, state: "idle" as const },
+      crops: [{ id: "crop-1", position: { x: 1, y: 1 }, stage: 1 as const, lastWateredAt: 1_000 }],
+    };
+
+    const updatedGame = selectPosition(game, { x: 1, y: 1 }, 60_999);
+
+    expect(updatedGame.character.state).toBe("idle");
+    expect(updatedGame.destination).toBeUndefined();
+    expect(updatedGame.route).toBeUndefined();
+    expect(updatedGame.activeAction).toBeUndefined();
+    expect(updatedGame.message).toBe("Esta acción no está disponible.");
+  });
+
+  it("resolves a pending interaction only after the final route parcel", () => {
+    const selectedGame = selectPosition(
+      createNewGame(() => 0),
+      { x: 4, y: 1 },
+      1_000,
+    );
+
+    const afterFirstArrival = arriveForInteraction(selectedGame, 1_100, "chop-tree");
+    const afterSecondArrival = arriveForInteraction(afterFirstArrival, 1_200, "chop-tree");
+    const afterThirdArrival = arriveForInteraction(afterSecondArrival, 1_300, "chop-tree");
+    const afterFinalArrival = arriveForInteraction(afterThirdArrival, 1_400, "chop-tree");
+
+    for (const game of [afterFirstArrival, afterSecondArrival, afterThirdArrival]) {
+      expect(game.character.state).toBe("walking");
+      expect(game.pendingTarget).toEqual({ kind: "tree", position: { x: 4, y: 1 } });
+      expect(game.activeAction).toBeUndefined();
+    }
+
+    expect(afterFinalArrival.character).toMatchObject({
+      position: { x: 4, y: 0 },
+      facing: "south",
+      state: "chopping",
+    });
+    expect(afterFinalArrival.destination).toBeUndefined();
+    expect(afterFinalArrival.pendingTarget).toBeUndefined();
+    expect(afterFinalArrival.activeAction).toMatchObject({
+      id: "chop-tree",
+      kind: "chopping",
+      target: { x: 4, y: 1 },
+    });
+  });
+
   it("accepts cultivable soil through the contextual tilling flow", () => {
     const game = createNewGame(() => 0);
     const target = { x: 1, y: 2 };
 
     const selectedGame = selectPosition(game, target, 1_000);
-    const arrivedGame = arriveForInteraction(selectedGame, 1_500, "till-soil");
+    const arrivedGame = arriveAtFinalDestination(selectedGame, 1_500, "till-soil");
 
     expect(selectedGame.destination).toEqual({ x: 0, y: 2 });
     expect(selectedGame.pendingTarget).toEqual({ kind: "parcel", position: target });
@@ -56,7 +135,7 @@ describe("game commands", () => {
 
   it("cancels an active action without effect and processes only the latest order", () => {
     const game = createNewGame(() => 0);
-    const choppingGame = arriveForInteraction(
+    const choppingGame = arriveAtFinalDestination(
       selectPosition(game, { x: 4, y: 1 }, 1_000),
       1_500,
       "chop-tree",
@@ -64,7 +143,7 @@ describe("game commands", () => {
 
     const latestOrderGame = selectPosition(choppingGame, { x: 0, y: 1 }, 2_000);
     const obsoleteCompletionGame = completeAction(latestOrderGame, "chop-tree", 4_500);
-    const arrivedGame = arriveForInteraction(obsoleteCompletionGame, 4_500);
+    const arrivedGame = arriveAtFinalDestination(obsoleteCompletionGame, 4_500);
 
     expect(latestOrderGame.activeAction).toBeUndefined();
     expect(latestOrderGame.destination).toEqual({ x: 0, y: 1 });

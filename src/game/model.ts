@@ -83,6 +83,7 @@ export interface GameState {
   crops: Crop[];
   inventory: Inventory;
   destination?: Coordinate;
+  route?: Coordinate[];
   pendingTarget?: InteractionTarget;
   activeAction?: ActiveAction;
   message?: string;

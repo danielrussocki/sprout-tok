@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { arriveAtDestination, assignDestination } from "./movement";
+import { advanceMovementUntil, arriveAtDestination, assignDestination } from "./movement";
 import { createNewGame } from "./world";
 
 describe("assignDestination", () => {
@@ -50,6 +50,61 @@ describe("assignDestination", () => {
     expect(updatedGame.destination).toEqual({ x: 1, y: 0 });
     expect(updatedGame.pendingTarget).toEqual({ kind: "crop", position: { x: 1, y: 1 } });
     expect(updatedGame.pendingTarget).not.toEqual(gameWithTreeOrder.pendingTarget);
+  });
+
+  it("starts a replacement route from the continuous position without a diagonal segment", () => {
+    const walkingGame = advanceMovementUntil(
+      assignDestination(
+        createNewGame(() => 0),
+        { x: 2, y: 0 },
+        undefined,
+        1_000,
+      ),
+      1_175,
+    );
+
+    const updatedGame = assignDestination(walkingGame, { x: 0, y: 2 }, undefined, 1_175);
+
+    expect(updatedGame.character.position).toEqual({ x: 0, y: 0 });
+    expect(updatedGame.destination).toEqual({ x: 0, y: 2 });
+    expect(updatedGame.movement).toMatchObject({
+      continuousPosition: { x: 0.5, y: 0 },
+      activeSegment: { start: { x: 0.5, y: 0 }, end: { x: 1, y: 0 } },
+      lastAdvancedAt: 1_175,
+    });
+    expect(updatedGame.route).toEqual([
+      { x: 1, y: 0 },
+      { x: 0, y: 0 },
+      { x: 0, y: 1 },
+      { x: 0, y: 2 },
+    ]);
+  });
+
+  it("replaces the pending target while preserving the current continuous route origin", () => {
+    const walkingGame = advanceMovementUntil(
+      assignDestination(
+        createNewGame(() => 0),
+        { x: 4, y: 0 },
+        { kind: "tree", position: { x: 4, y: 1 } },
+        1_000,
+      ),
+      1_175,
+    );
+
+    const updatedGame = assignDestination(
+      walkingGame,
+      { x: 1, y: 0 },
+      { kind: "crop", position: { x: 1, y: 1 } },
+      1_175,
+    );
+
+    expect(updatedGame.pendingTarget).toEqual({ kind: "crop", position: { x: 1, y: 1 } });
+    expect(updatedGame.movement).toEqual({
+      continuousPosition: { x: 0.5, y: 0 },
+      activeSegment: { start: { x: 0.5, y: 0 }, end: { x: 1, y: 0 } },
+      remainingRoute: [],
+      lastAdvancedAt: 1_175,
+    });
   });
 });
 
@@ -109,5 +164,69 @@ describe("arriveAtDestination", () => {
       state: "idle",
     });
     expect(updatedGame.pendingTarget).toEqual({ kind: "tree", position: { x: 4, y: 1 } });
+  });
+});
+
+describe("advanceMovementUntil", () => {
+  it("updates the continuous position without confirming the next parcel before it is reached", () => {
+    const walkingGame = assignDestination(
+      createNewGame(() => 0),
+      { x: 2, y: 0 },
+      undefined,
+      1_000,
+    );
+
+    const updatedGame = advanceMovementUntil(walkingGame, 1_175);
+
+    expect(updatedGame.character).toEqual({
+      position: { x: 0, y: 0 },
+      facing: "east",
+      state: "walking",
+    });
+    expect(updatedGame.movement).toEqual({
+      continuousPosition: { x: 0.5, y: 0 },
+      activeSegment: { start: { x: 0.5, y: 0 }, end: { x: 1, y: 0 } },
+      remainingRoute: [{ x: 2, y: 0 }],
+      lastAdvancedAt: 1_175,
+    });
+  });
+
+  it("accumulates continuous displacement across consecutive pulses", () => {
+    const walkingGame = assignDestination(
+      createNewGame(() => 0),
+      { x: 2, y: 0 },
+      undefined,
+      1_000,
+    );
+    const afterFirstPulse = advanceMovementUntil(walkingGame, 1_016);
+    const afterSecondPulse = advanceMovementUntil(afterFirstPulse, 1_032);
+
+    expect(afterFirstPulse.movement?.continuousPosition.x).toBeCloseTo(16 / 350);
+    expect(afterSecondPulse.movement?.continuousPosition).toEqual({
+      x: 32 / 350,
+      y: 0,
+    });
+    expect(afterSecondPulse.movement?.activeSegment.start).toEqual({ x: 32 / 350, y: 0 });
+    expect(afterSecondPulse.character.position).toEqual({ x: 0, y: 0 });
+  });
+
+  it("confirms every reached route parcel and completes the route in one time advance", () => {
+    const walkingGame = assignDestination(
+      createNewGame(() => 0),
+      { x: 2, y: 0 },
+      undefined,
+      1_000,
+    );
+
+    const updatedGame = advanceMovementUntil(walkingGame, 1_700);
+
+    expect(updatedGame.character).toEqual({
+      position: { x: 2, y: 0 },
+      facing: "east",
+      state: "idle",
+    });
+    expect(updatedGame.destination).toBeUndefined();
+    expect(updatedGame.route).toBeUndefined();
+    expect(updatedGame.movement).toBeUndefined();
   });
 });

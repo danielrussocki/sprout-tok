@@ -40,6 +40,12 @@ describe("versioned game saves", () => {
       ],
       inventory: { crop: 3 },
       destination: { x: 3, y: 3 },
+      movement: {
+        continuousPosition: { x: 2.5, y: 2 },
+        activeSegment: { start: { x: 2, y: 2 }, end: { x: 3, y: 2 } },
+        remainingRoute: [{ x: 4, y: 2 }],
+        lastAdvancedAt: 1_767_225_599_500,
+      },
       pendingTarget: { kind: "tree" as const, position: { x: 4, y: 1 } },
       activeAction: {
         id: "action-1",

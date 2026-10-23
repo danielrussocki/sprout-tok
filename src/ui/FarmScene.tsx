@@ -1,16 +1,10 @@
-import { extend, useTick } from "@pixi/react";
+import { extend } from "@pixi/react";
 import { Graphics } from "pixi.js";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import type { CharacterState, Coordinate, GameState } from "../game/model";
 import { selectAtPointerPosition, type SelectionPointerEvent } from "./FarmSceneSelection";
 import { characterVisuals, cropVisuals, tileVisuals, treeVisuals } from "./FarmSceneVisuals";
-import {
-  getCharacterVisualPosition,
-  getMovementInterpolationProgress,
-  getMovementSegmentKey,
-  type MovementInterpolation,
-} from "./movementInterpolation";
-import { movementDurationPerTileMs } from "./movementArrival";
+import { getCharacterVisualPosition } from "./movementInterpolation";
 
 extend({ Graphics });
 
@@ -76,7 +70,7 @@ function drawCharacterMarker(
   }
 }
 
-function drawScene(graphics: Graphics, game: GameState, movementProgress: number) {
+function drawScene(graphics: Graphics, game: GameState) {
   graphics.clear();
 
   for (const tile of game.map.tiles) {
@@ -158,7 +152,7 @@ function drawScene(graphics: Graphics, game: GameState, movementProgress: number
     }
   }
 
-  const visualPosition = getCharacterVisualPosition(game, movementProgress);
+  const visualPosition = getCharacterVisualPosition(game);
   const characterPosition = getCellPosition(visualPosition.x, visualPosition.y);
   const centerX = characterPosition.x + cellSize / 2;
   const centerY = characterPosition.y + cellSize / 2;
@@ -177,41 +171,7 @@ interface FarmSceneProps {
 }
 
 export function FarmScene({ game, onSelect }: FarmSceneProps) {
-  const [movement, setMovement] = useState<MovementInterpolation>({
-    game: undefined,
-    segmentKey: undefined,
-    progress: 0,
-  });
-  const segmentKey = getMovementSegmentKey(game);
-  const movementProgress = getMovementInterpolationProgress(movement, game);
-
-  const advanceMovement = useCallback(
-    (ticker: { deltaMS: number }) => {
-      if (segmentKey === undefined) {
-        return;
-      }
-
-      setMovement((currentMovement) => ({
-        game,
-        segmentKey,
-        progress: Math.min(
-          1,
-          (currentMovement.game === game && currentMovement.segmentKey === segmentKey
-            ? currentMovement.progress
-            : 0) +
-            ticker.deltaMS / movementDurationPerTileMs,
-        ),
-      }));
-    },
-    [game, segmentKey],
-  );
-
-  useTick(advanceMovement);
-
-  const draw = useCallback(
-    (graphics: Graphics) => drawScene(graphics, game, movementProgress),
-    [game, movementProgress],
-  );
+  const draw = useCallback((graphics: Graphics) => drawScene(graphics, game), [game]);
   const select = useCallback(
     (event: SelectionPointerEvent) => {
       if (onSelect !== undefined) {

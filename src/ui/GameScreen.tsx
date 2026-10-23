@@ -1,12 +1,12 @@
 import { Application } from "@pixi/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { completeAction } from "../game/actions";
-import { arriveForInteraction, selectPosition } from "../game/commands";
+import { advanceMovement, selectPosition } from "../game/commands";
 import type { Coordinate } from "../game/model";
 import { restoreGame, saveStorageKey, serializeGame } from "../game/save";
 import { FarmScene } from "./FarmScene";
 import { farmSceneSize } from "./FarmSceneVisuals";
-import { getNextArrivalDelay } from "./movementArrival";
+import { startMovementPulse } from "./movementPulse";
 import { StatusPanel } from "./StatusPanel";
 
 function loadGame() {
@@ -22,30 +22,21 @@ export function GameScreen() {
   }, [game]);
 
   useEffect(() => {
-    const arrivalDelay = getNextArrivalDelay(game);
-    const nextRoutePosition = game.route?.[0];
-
-    if (arrivalDelay === undefined || nextRoutePosition === undefined) {
+    if (game.character.state !== "walking") {
       return;
     }
 
-    const timeoutId = window.setTimeout(() => {
+    return startMovementPulse((now) => {
       setGame((currentGame) => {
-        if (
-          currentGame.character.state !== "walking" ||
-          currentGame.route?.[0]?.x !== nextRoutePosition.x ||
-          currentGame.route?.[0]?.y !== nextRoutePosition.y
-        ) {
+        if (currentGame.character.state !== "walking") {
           return currentGame;
         }
 
         actionSequence.current += 1;
-        return arriveForInteraction(currentGame, Date.now(), `action-${actionSequence.current}`);
+        return advanceMovement(currentGame, now, `action-${actionSequence.current}`);
       });
-    }, arrivalDelay);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [game]);
+    });
+  }, [game.character.state]);
 
   useEffect(() => {
     if (game.activeAction === undefined) {

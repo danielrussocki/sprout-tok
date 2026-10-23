@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { completeAction } from "./actions";
-import { arriveForInteraction, selectPosition } from "./commands";
+import { advanceMovement, arriveForInteraction, selectPosition } from "./commands";
 import type { GameState } from "./model";
 import { createNewGame } from "./world";
 
@@ -112,6 +112,31 @@ describe("game commands", () => {
     });
   });
 
+  it("starts the pending interaction when a movement advance completes its route", () => {
+    const selectedGame = selectPosition(
+      createNewGame(() => 0),
+      { x: 4, y: 1 },
+      1_000,
+    );
+
+    const updatedGame = advanceMovement(selectedGame, 2_400, "chop-tree");
+
+    expect(updatedGame.character).toMatchObject({
+      position: { x: 4, y: 0 },
+      facing: "south",
+      state: "chopping",
+    });
+    expect(updatedGame.destination).toBeUndefined();
+    expect(updatedGame.pendingTarget).toBeUndefined();
+    expect(updatedGame.movement).toBeUndefined();
+    expect(updatedGame.activeAction).toMatchObject({
+      id: "chop-tree",
+      kind: "chopping",
+      target: { x: 4, y: 1 },
+      completesAt: 5_400,
+    });
+  });
+
   it("accepts cultivable soil through the contextual tilling flow", () => {
     const game = createNewGame(() => 0);
     const target = { x: 1, y: 2 };
@@ -154,6 +179,91 @@ describe("game commands", () => {
       state: "idle",
     });
     expect(arrivedGame.activeAction).toBeUndefined();
+  });
+
+  it("advances walking movement to the selection time before replacing its order", () => {
+    const walkingGame = selectPosition(
+      createNewGame(() => 0),
+      { x: 2, y: 0 },
+      1_000,
+    );
+
+    const redirectedGame = selectPosition(walkingGame, { x: 0, y: 2 }, 1_175);
+
+    expect(redirectedGame.character.position).toEqual({ x: 0, y: 0 });
+    expect(redirectedGame.movement).toEqual({
+      continuousPosition: { x: 0.5, y: 0 },
+      activeSegment: { start: { x: 0.5, y: 0 }, end: { x: 1, y: 0 } },
+      remainingRoute: [
+        { x: 0, y: 0 },
+        { x: 0, y: 1 },
+        { x: 0, y: 2 },
+      ],
+      lastAdvancedAt: 1_175,
+    });
+  });
+
+  it("redirects to an empty destination without a diagonal from the continuous position", () => {
+    const walkingGame = selectPosition(
+      createNewGame(() => 0),
+      { x: 2, y: 0 },
+      1_000,
+    );
+
+    const redirectedGame = selectPosition(walkingGame, { x: 0, y: 2 }, 1_175);
+
+    expect(redirectedGame.character.position).toEqual({ x: 0, y: 0 });
+    expect(redirectedGame.movement).toMatchObject({
+      continuousPosition: { x: 0.5, y: 0 },
+      activeSegment: { start: { x: 0.5, y: 0 }, end: { x: 1, y: 0 } },
+    });
+    expect(redirectedGame.movement?.activeSegment.start).not.toEqual(
+      redirectedGame.character.position,
+    );
+  });
+
+  it("redirects to an interaction target from the continuous position reached mid-segment", () => {
+    const walkingGame = selectPosition(
+      createNewGame(() => 0),
+      { x: 2, y: 0 },
+      1_000,
+    );
+
+    const redirectedGame = selectPosition(walkingGame, { x: 4, y: 1 }, 1_175);
+
+    expect(redirectedGame.character.position).toEqual({ x: 0, y: 0 });
+    expect(redirectedGame.destination).toEqual({ x: 4, y: 0 });
+    expect(redirectedGame.pendingTarget).toEqual({ kind: "tree", position: { x: 4, y: 1 } });
+    expect(redirectedGame.activeAction).toBeUndefined();
+    expect(redirectedGame.movement).toMatchObject({
+      continuousPosition: { x: 0.5, y: 0 },
+      activeSegment: { start: { x: 0.5, y: 0 }, end: { x: 1, y: 0 } },
+    });
+  });
+
+  it("keeps the exact continuous position when repeatedly selecting the same destination", () => {
+    const walkingGame = selectPosition(
+      createNewGame(() => 0),
+      { x: 2, y: 0 },
+      1_000,
+    );
+    const firstSelection = selectPosition(walkingGame, { x: 2, y: 0 }, 1_175);
+    const repeatedSelection = selectPosition(firstSelection, { x: 2, y: 0 }, 1_225);
+
+    expect(repeatedSelection.character.position).toEqual({ x: 0, y: 0 });
+    expect(repeatedSelection.destination).toEqual({ x: 2, y: 0 });
+    expect(repeatedSelection.movement?.continuousPosition.x).toBeCloseTo(0.6428571428571429);
+    expect(repeatedSelection.movement).toMatchObject({
+      activeSegment: {
+        end: { x: 1, y: 0 },
+      },
+      lastAdvancedAt: 1_225,
+    });
+    expect(repeatedSelection.movement?.activeSegment.start.x).toBeCloseTo(0.6428571428571429);
+    expect(repeatedSelection.movement?.activeSegment.start.y).toBe(0);
+    expect(repeatedSelection.movement?.activeSegment.start).not.toEqual(
+      repeatedSelection.character.position,
+    );
   });
 
   it("reports an unreachable target in Spanish when it has no walkable adjacent parcel", () => {

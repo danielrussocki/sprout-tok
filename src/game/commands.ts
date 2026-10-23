@@ -5,7 +5,7 @@ import {
   resultMessages,
   setResultMessage,
 } from "./messages";
-import { arriveAtDestination, assignDestination } from "./movement";
+import { advanceMovementUntil, arriveAtDestination, assignDestination } from "./movement";
 import { findClosestWalkableAdjacentParcel, isValidDestination } from "./navigation";
 import { normalizeTime } from "./time";
 import type { Coordinate, GameState, InteractionTarget } from "./model";
@@ -21,6 +21,7 @@ function setIdle(game: GameState): GameState {
     character: { ...game.character, state: "idle" },
     destination: undefined,
     route: undefined,
+    movement: undefined,
     pendingTarget: undefined,
   };
 }
@@ -85,43 +86,58 @@ function beginInteraction(
 }
 
 export function selectPosition(game: GameState, position: Coordinate, now: number): GameState {
-  const normalizedGame = normalizeTime(cancelActiveAction(game), now);
-  const target = getInteractionTargetAt(normalizedGame, position);
+  const movedGame = advanceMovementUntil(game, now);
+  const normalizedGame = normalizeTime(movedGame, now);
+  const cancelledGame = cancelActiveAction(normalizedGame);
+  const target = getInteractionTargetAt(cancelledGame, position);
 
   if (target === undefined) {
-    return isValidDestination(normalizedGame, position)
-      ? assignDestination(normalizedGame, position)
-      : reportInvalidDestination(setIdle(normalizedGame));
+    return isValidDestination(cancelledGame, position)
+      ? assignDestination(cancelledGame, position, undefined, now)
+      : reportInvalidDestination(setIdle(cancelledGame));
   }
 
-  if (!isSoilTarget(normalizedGame, target) && target.kind === "parcel") {
-    return assignDestination(normalizedGame, position);
+  if (!isSoilTarget(cancelledGame, target) && target.kind === "parcel") {
+    return assignDestination(cancelledGame, position, undefined, now);
   }
 
   if (target.kind === "tree") {
-    const tree = normalizedGame.trees.find(
+    const tree = cancelledGame.trees.find(
       (candidate) => candidate.position.x === position.x && candidate.position.y === position.y,
     );
 
     if (tree?.status !== "available") {
-      return setResultMessage(setIdle(normalizedGame), resultMessages.unavailableAction);
+      return setResultMessage(setIdle(cancelledGame), resultMessages.unavailableAction);
     }
   }
 
-  const adjacentParcel = findClosestWalkableAdjacentParcel(normalizedGame, position);
+  const adjacentParcel = findClosestWalkableAdjacentParcel(cancelledGame, position);
 
   if (adjacentParcel === undefined) {
-    return reportUnreachableTarget(setIdle(normalizedGame));
+    return reportUnreachableTarget(setIdle(cancelledGame));
   }
 
   if (
-    adjacentParcel.x === normalizedGame.character.position.x &&
-    adjacentParcel.y === normalizedGame.character.position.y
+    adjacentParcel.x === cancelledGame.character.position.x &&
+    adjacentParcel.y === cancelledGame.character.position.y
   ) {
-    return beginInteraction(normalizedGame, target, now, `action-${now}`);
+    return beginInteraction(cancelledGame, target, now, `action-${now}`);
   }
 
-  return assignDestination(normalizedGame, adjacentParcel, target);
+  return assignDestination(cancelledGame, adjacentParcel, target, now);
+}
+
+export function advanceMovement(
+  game: GameState,
+  now: number,
+  actionId = `action-${now}`,
+): GameState {
+  const movedGame = advanceMovementUntil(game, now);
+  const target = movedGame.pendingTarget;
+
+  return target === undefined || movedGame.destination !== undefined
+    ? movedGame
+    : beginInteraction(movedGame, target, now, actionId);
 }
 
 export function arriveForInteraction(

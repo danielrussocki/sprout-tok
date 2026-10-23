@@ -3,6 +3,11 @@ export interface Coordinate {
   y: number;
 }
 
+export interface ContinuousPosition {
+  x: number;
+  y: number;
+}
+
 export type Direction = "north" | "east" | "south" | "west";
 
 export type CharacterState = "idle" | "walking" | "tilling dirt" | "chopping" | "watering";
@@ -71,6 +76,18 @@ export interface ActiveAction {
   completesAt: number;
 }
 
+export interface MovementSegment {
+  start: ContinuousPosition;
+  end: Coordinate;
+}
+
+export interface Movement {
+  continuousPosition: ContinuousPosition;
+  activeSegment: MovementSegment;
+  remainingRoute: Coordinate[];
+  lastAdvancedAt: number;
+}
+
 export type InteractionTarget =
   | { kind: "parcel"; position: Coordinate }
   | { kind: "tree"; position: Coordinate }
@@ -84,6 +101,7 @@ export interface GameState {
   inventory: Inventory;
   destination?: Coordinate;
   route?: Coordinate[];
+  movement?: Movement;
   pendingTarget?: InteractionTarget;
   activeAction?: ActiveAction;
   message?: string;

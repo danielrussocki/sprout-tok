@@ -3,11 +3,14 @@ import { describe, expectTypeOf, it } from "vitest";
 import type {
   ActiveAction,
   Character,
+  ContinuousPosition,
   Coordinate,
   Crop,
   Direction,
   GameState,
   Inventory,
+  Movement,
+  MovementSegment,
   Parcel,
   Tree,
 } from "./model";
@@ -15,6 +18,7 @@ import type {
 describe("game domain model", () => {
   it("represents the game state without UI data", () => {
     expectTypeOf<Coordinate>().toEqualTypeOf<{ x: number; y: number }>();
+    expectTypeOf<ContinuousPosition>().toEqualTypeOf<{ x: number; y: number }>();
     expectTypeOf<Direction>().toEqualTypeOf<"north" | "east" | "south" | "west">();
 
     expectTypeOf<Character>().toMatchTypeOf<{
@@ -44,11 +48,22 @@ describe("game domain model", () => {
       target: Coordinate;
       completesAt: number;
     }>();
+    expectTypeOf<MovementSegment>().toEqualTypeOf<{
+      start: ContinuousPosition;
+      end: Coordinate;
+    }>();
+    expectTypeOf<Movement>().toEqualTypeOf<{
+      continuousPosition: ContinuousPosition;
+      activeSegment: MovementSegment;
+      remainingRoute: Coordinate[];
+      lastAdvancedAt: number;
+    }>();
     expectTypeOf<GameState>().toMatchTypeOf<{
       character: Character;
       trees: Tree[];
       crops: Crop[];
       inventory: Inventory;
+      movement?: Movement;
       activeAction?: ActiveAction;
     }>();
   });

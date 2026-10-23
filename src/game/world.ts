@@ -18,6 +18,16 @@ const adjacentOffsets: readonly Coordinate[] = [
   { x: 0, y: 1 },
   { x: -1, y: 0 },
 ];
+const treeSoilExclusionOffsets: readonly Coordinate[] = [
+  { x: -1, y: -1 },
+  { x: 0, y: -1 },
+  { x: 1, y: -1 },
+  { x: -1, y: 0 },
+  { x: 1, y: 0 },
+  { x: -1, y: 1 },
+  { x: 0, y: 1 },
+  { x: 1, y: 1 },
+];
 
 function createMap(): GameMap {
   const tiles: Parcel[] = [];
@@ -165,12 +175,13 @@ export function getGrassParcelsWithoutAdjacentSoil(game: GameState): GrassParcel
   return game.map.tiles.filter(
     (parcel): parcel is GrassParcel =>
       parcel.kind === "grass" &&
-      ![
-        { x: parcel.position.x, y: parcel.position.y - 1 },
-        { x: parcel.position.x + 1, y: parcel.position.y },
-        { x: parcel.position.x, y: parcel.position.y + 1 },
-        { x: parcel.position.x - 1, y: parcel.position.y },
-      ].some((position) => getParcelAt(game, position)?.kind === "soil"),
+      !treeSoilExclusionOffsets.some(
+        (offset) =>
+          getParcelAt(game, {
+            x: parcel.position.x + offset.x,
+            y: parcel.position.y + offset.y,
+          })?.kind === "soil",
+      ),
   );
 }
 

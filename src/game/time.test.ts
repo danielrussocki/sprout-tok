@@ -38,6 +38,29 @@ function createGameWithoutTreeCandidates(): GameState {
   };
 }
 
+function createGameWithOnlyDiagonalGrassToSoil(): GameState {
+  const game = createNewGame(() => 0, 0);
+
+  return {
+    ...game,
+    trees: [],
+    crops: [],
+    map: {
+      width: 3,
+      height: 3,
+      tiles: Array.from({ length: 9 }, (_, index) => {
+        const position = { x: index % 3, y: Math.floor(index / 3) };
+        const isGrassDiagonalToSoil =
+          (position.x === 0 || position.x === 2) && (position.y === 0 || position.y === 2);
+
+        return isGrassDiagonalToSoil
+          ? { position, kind: "grass" as const, walkable: true as const }
+          : { position, kind: "soil" as const, walkable: true as const, tilled: false };
+      }),
+    },
+  };
+}
+
 describe("normalizeTime", () => {
   it("generates a tree and records the attempt at the exact five-minute interval", () => {
     const game = createNewGame(() => 0, 0);
@@ -87,6 +110,23 @@ describe("normalizeTime", () => {
     expect(beforeNextAttempt).toBe(afterFirstAttempt);
     expect(afterNextAttempt.lastTreeGenerationAttemptAt).toBe(treeGenerationIntervalMs * 2);
     expect(afterNextAttempt.trees).toEqual(game.trees);
+    expect(random).not.toHaveBeenCalled();
+  });
+
+  it("records a failed attempt when every grass parcel is diagonal to soil and waits another interval", () => {
+    const game = createGameWithOnlyDiagonalGrassToSoil();
+    const random = vi.fn(() => 0);
+
+    const afterFirstAttempt = normalizeTime(game, treeGenerationIntervalMs, random);
+    const beforeNextAttempt = normalizeTime(
+      afterFirstAttempt,
+      treeGenerationIntervalMs * 2 - 1,
+      random,
+    );
+
+    expect(afterFirstAttempt.trees).toEqual([]);
+    expect(afterFirstAttempt.lastTreeGenerationAttemptAt).toBe(treeGenerationIntervalMs);
+    expect(beforeNextAttempt).toBe(afterFirstAttempt);
     expect(random).not.toHaveBeenCalled();
   });
 

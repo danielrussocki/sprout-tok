@@ -100,7 +100,33 @@ describe("getInitialCropStage", () => {
 });
 
 describe("world queries", () => {
-  it("returns only grass parcels without soil to the north, east, south, or west", () => {
+  it("rejects a grass parcel diagonally adjacent to soil", () => {
+    const game: GameState = {
+      map: {
+        width: 2,
+        height: 2,
+        tiles: [
+          { position: { x: 0, y: 0 }, kind: "soil", walkable: true, tilled: false },
+          { position: { x: 1, y: 0 }, kind: "grass", walkable: true },
+          { position: { x: 0, y: 1 }, kind: "grass", walkable: true },
+          { position: { x: 1, y: 1 }, kind: "grass", walkable: true },
+        ],
+      },
+      character: { position: { x: 0, y: 0 }, facing: "east", state: "idle" },
+      trees: [],
+      crops: [],
+      inventory: { crop: 0 },
+      lastTreeGenerationAttemptAt: 0,
+    };
+
+    expect(getGrassParcelsWithoutAdjacentSoil(game)).not.toContainEqual({
+      position: { x: 1, y: 1 },
+      kind: "grass",
+      walkable: true,
+    });
+  });
+
+  it("excludes grass parcels adjacent to soil in every direction", () => {
     const game: GameState = {
       map: {
         width: 3,
@@ -124,12 +150,7 @@ describe("world queries", () => {
       lastTreeGenerationAttemptAt: 0,
     };
 
-    expect(getGrassParcelsWithoutAdjacentSoil(game)).toEqual([
-      { position: { x: 0, y: 0 }, kind: "grass", walkable: true },
-      { position: { x: 2, y: 0 }, kind: "grass", walkable: true },
-      { position: { x: 0, y: 2 }, kind: "grass", walkable: true },
-      { position: { x: 2, y: 2 }, kind: "grass", walkable: true },
-    ]);
+    expect(getGrassParcelsWithoutAdjacentSoil(game)).toEqual([]);
   });
 
   it("recognizes walkable grass and soil inside the map", () => {
@@ -245,6 +266,10 @@ describe("tree generation parcel validation", () => {
     ["east", { x: 2, y: 1 }],
     ["south", { x: 1, y: 2 }],
     ["west", { x: 0, y: 1 }],
+    ["northwest", { x: 0, y: 0 }],
+    ["northeast", { x: 2, y: 0 }],
+    ["southeast", { x: 2, y: 2 }],
+    ["southwest", { x: 0, y: 2 }],
   ] as const)("rejects grass with soil to the %s", (_side, soilPosition) => {
     const game: GameState = {
       map: {
@@ -267,6 +292,33 @@ describe("tree generation parcel validation", () => {
 
     expect(getGrassParcelsWithoutAdjacentSoil(game)).not.toContainEqual({
       position: { x: 1, y: 1 },
+      kind: "grass",
+      walkable: true,
+    });
+  });
+
+  it("keeps grass outside the eight positions around soil", () => {
+    const game: GameState = {
+      map: {
+        width: 4,
+        height: 4,
+        tiles: Array.from({ length: 16 }, (_, index) => {
+          const position = { x: index % 4, y: Math.floor(index / 4) };
+
+          return position.x === 1 && position.y === 1
+            ? { position, kind: "soil" as const, walkable: true as const, tilled: false }
+            : { position, kind: "grass" as const, walkable: true as const };
+        }),
+      },
+      character: { position: { x: 0, y: 0 }, facing: "east", state: "idle" },
+      trees: [],
+      crops: [],
+      inventory: { crop: 0 },
+      lastTreeGenerationAttemptAt: 0,
+    };
+
+    expect(getGrassParcelsWithoutAdjacentSoil(game)).toContainEqual({
+      position: { x: 3, y: 3 },
       kind: "grass",
       walkable: true,
     });

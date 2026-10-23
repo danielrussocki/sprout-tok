@@ -8,7 +8,7 @@ const walkingGame: GameState = {
   character: { position: { x: 0, y: 0 }, facing: "east", state: "walking" },
   trees: [],
   crops: [],
-  inventory: { crop: 0 },
+  inventory: { crop: 0, log: 0 },
   lastTreeGenerationAttemptAt: 0,
   route: [{ x: 1, y: 0 }],
   movement: {

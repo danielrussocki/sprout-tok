@@ -5,6 +5,64 @@ import { resultMessages } from "./messages";
 import { createNewGame } from "./world";
 
 describe("action cycle", () => {
+  it("adds exactly one log only after a valid chopping action completes", () => {
+    const target = { x: 4, y: 1 };
+    const game = {
+      ...createNewGame(() => 0),
+      inventory: { crop: 3, log: 7 },
+    };
+    const startedGame = startAction(game, "action-1", "chopping", target, 1_000);
+
+    const beforeCompletion = completeAction(startedGame, "action-1", 3_999);
+    const completedGame = completeAction(startedGame, "action-1", 4_000);
+    const completedAgainGame = completeAction(completedGame, "action-1", 4_000);
+
+    expect(beforeCompletion.inventory).toEqual({ crop: 3, log: 7 });
+    expect(completedGame.inventory).toEqual({ crop: 3, log: 8 });
+    expect(completedAgainGame.inventory).toEqual({ crop: 3, log: 8 });
+  });
+
+  it("does not add a log when a chopping action is cancelled", () => {
+    const target = { x: 4, y: 1 };
+    const startedGame = startAction(
+      createNewGame(() => 0),
+      "action-1",
+      "chopping",
+      target,
+      1_000,
+    );
+
+    const cancelledGame = cancelActiveAction(startedGame);
+    const completedGame = completeAction(cancelledGame, "action-1", 4_000);
+
+    expect(cancelledGame.inventory).toEqual({ crop: 0, log: 0 });
+    expect(completedGame.inventory).toEqual({ crop: 0, log: 0 });
+  });
+
+  it("does not add a log when chopping a reduced or missing tree is ignored", () => {
+    const target = { x: 4, y: 1 };
+    const reducedGame = {
+      ...createNewGame(() => 0),
+      trees: [
+        {
+          id: "tree-1",
+          position: target,
+          status: "reduced" as const,
+          reducedAt: 1_000,
+        },
+      ],
+    };
+    const missingGame = { ...reducedGame, trees: [] };
+
+    const afterReducedSelection = startAction(reducedGame, "action-1", "chopping", target, 2_000);
+    const afterMissingSelection = startAction(missingGame, "action-2", "chopping", target, 2_000);
+
+    expect(afterReducedSelection.inventory).toEqual({ crop: 0, log: 0 });
+    expect(afterMissingSelection.inventory).toEqual({ crop: 0, log: 0 });
+    expect(afterReducedSelection.activeAction).toBeUndefined();
+    expect(afterMissingSelection.activeAction).toBeUndefined();
+  });
+
   it("does not start watering a stage four crop", () => {
     const target = { x: 1, y: 1 };
     const game = {
@@ -49,10 +107,12 @@ describe("action cycle", () => {
     const completedGame = completeAction(startedGame, "action-1", 4_000);
 
     expect(beforeCompletion.trees).toEqual(game.trees);
+    expect(beforeCompletion.inventory).toEqual({ crop: 0, log: 0 });
     expect(completedGame.trees).toEqual([
       { id: "tree-1", position: target, status: "reduced", reducedAt: 4_000 },
       game.trees[1],
     ]);
+    expect(completedGame.inventory).toEqual({ crop: 0, log: 1 });
     expect(completedGame.activeAction).toBeUndefined();
     expect(completedGame.character.state).toBe("idle");
   });
@@ -248,7 +308,7 @@ describe("plantCrop", () => {
             : parcel,
         ),
       },
-      inventory: { crop: 7 },
+      inventory: { crop: 7, log: 0 },
     };
 
     const updatedGame = plantCrop(tilledGame, target);
@@ -259,7 +319,7 @@ describe("plantCrop", () => {
       stage: 1,
       growthReadyAt: null,
     });
-    expect(updatedGame.inventory).toEqual({ crop: 7 });
+    expect(updatedGame.inventory).toEqual({ crop: 7, log: 0 });
     expect(updatedGame.activeAction).toBeUndefined();
     expect(updatedGame.character.state).toBe("idle");
   });
@@ -311,7 +371,7 @@ describe("plantCrop", () => {
       { id: "crop-3", position: targets[0], stage: 1, growthReadyAt: null },
       { id: "crop-4", position: targets[1], stage: 1, growthReadyAt: null },
     ]);
-    expect(secondPlanting.inventory).toEqual({ crop: 0 });
+    expect(secondPlanting.inventory).toEqual({ crop: 0, log: 0 });
   });
 
   it("prevents a second crop from being planted on a newly occupied parcel", () => {
@@ -348,13 +408,13 @@ describe("harvestCrop", () => {
     const game = {
       ...createNewGame(() => 0),
       crops: [{ id: "crop-1", position: target, stage: 4 as const }],
-      inventory: { crop: 7 },
+      inventory: { crop: 7, log: 0 },
     };
 
     const updatedGame = harvestCrop(game, target);
 
     expect(updatedGame.crops).toEqual([]);
-    expect(updatedGame.inventory).toEqual({ crop: 8 });
+    expect(updatedGame.inventory).toEqual({ crop: 8, log: 0 });
   });
 
   it("leaves a crop before stage four unchanged", () => {
@@ -374,14 +434,14 @@ describe("harvestCrop", () => {
     const game = {
       ...createNewGame(() => 0),
       crops: [{ id: "crop-1", position: target, stage: 4 as const }],
-      inventory: { crop: 10_000 },
+      inventory: { crop: 10_000, log: 0 },
     };
 
     const harvestedGame = harvestCrop(game, target);
     const harvestedAgainGame = harvestCrop(harvestedGame, target);
 
     expect(harvestedGame.crops).toEqual([]);
-    expect(harvestedGame.inventory).toEqual({ crop: 10_001 });
+    expect(harvestedGame.inventory).toEqual({ crop: 10_001, log: 0 });
     expect(harvestedAgainGame).toEqual({
       ...harvestedGame,
       message: resultMessages.unavailableAction,
@@ -395,14 +455,14 @@ describe("harvestCrop", () => {
       const game = {
         ...createNewGame(() => 0),
         crops: [{ id: "crop-1", position: target, stage }],
-        inventory: { crop: 10_000 },
+        inventory: { crop: 10_000, log: 0 },
       };
 
       const updatedGame = harvestCrop(game, target);
 
       expect(updatedGame).toEqual({ ...game, message: resultMessages.unavailableAction });
       expect(updatedGame.crops).toEqual([{ id: "crop-1", position: target, stage }]);
-      expect(updatedGame.inventory).toEqual({ crop: 10_000 });
+      expect(updatedGame.inventory).toEqual({ crop: 10_000, log: 0 });
     },
   );
 });

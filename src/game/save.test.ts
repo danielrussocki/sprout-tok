@@ -11,11 +11,12 @@ import {
 import { createNewGame } from "./world";
 
 describe("versioned game saves", () => {
-  it("serializes a version 2 save with a pending crop growth wait", () => {
+  it("serializes and parses a version 3 save with a pending crop growth wait and logs", () => {
     const savedAt = 1_767_225_600_000;
     const growthReadyAt = savedAt + wateringCooldownMs;
     const game = {
       ...createNewGame(() => 0),
+      inventory: { crop: 2, log: 4 },
       crops: [
         {
           id: "crop-1",
@@ -28,12 +29,73 @@ describe("versioned game saves", () => {
 
     const saveData = createSaveData(game, savedAt);
 
-    expect(saveVersion).toBe(2);
+    expect(saveVersion).toBe(3);
     expect(saveData).toMatchObject({
-      version: 2,
+      version: 3,
       crops: [{ id: "crop-1", stage: 2, growthReadyAt }],
+      inventory: { crop: 2, log: 4 },
     });
     expect(parseSaveData(JSON.stringify(saveData))).toEqual(saveData);
+  });
+
+  it("restores logs obtained before closing the game", () => {
+    const savedAt = 1_767_225_600_000;
+    const game = {
+      ...createNewGame(() => 0, savedAt),
+      inventory: { crop: 2, log: 3 },
+    };
+
+    const restored = restoreGame(serializeGame(game, savedAt), savedAt, () => 0.99);
+
+    expect(restored.inventory).toEqual({ crop: 2, log: 3 });
+  });
+
+  it.each([
+    "invalid save",
+    JSON.stringify({
+      ...createSaveData(
+        createNewGame(() => 0),
+        1_767_225_600_000,
+      ),
+      version: saveVersion - 1,
+    }),
+  ])("starts a new game with a Spanish message for invalid or incompatible saves", (serialized) => {
+    const restored = restoreGame(serialized, 1_767_225_600_000, () => 0.99);
+
+    expect(restored).toMatchObject({
+      character: { state: "idle" },
+      inventory: { crop: 0, log: 0 },
+      message: resultMessages.invalidSave,
+    });
+  });
+
+  it.each([
+    (saveData: ReturnType<typeof createSaveData>) => {
+      const { log: _, ...inventoryWithoutLogs } = saveData.inventory;
+
+      return { ...saveData, inventory: inventoryWithoutLogs };
+    },
+    (saveData: ReturnType<typeof createSaveData>) => ({
+      ...saveData,
+      inventory: { ...saveData.inventory, log: -1 },
+    }),
+    (saveData: ReturnType<typeof createSaveData>) => ({
+      ...saveData,
+      inventory: { ...saveData.inventory, log: 1.5 },
+    }),
+  ])("safely discards version 3 saves without a valid log count", (createInvalidSave) => {
+    const savedAt = 1_767_225_600_000;
+    const serialized = JSON.stringify(
+      createInvalidSave(
+        createSaveData(
+          createNewGame(() => 0),
+          savedAt,
+        ),
+      ),
+    );
+
+    expect(parseSaveData(serialized)).toBeUndefined();
+    expect(restoreGame(serialized, savedAt, () => 0.99).message).toBe(resultMessages.invalidSave);
   });
 
   it.each([
@@ -98,7 +160,7 @@ describe("versioned game saves", () => {
           lastWateredAt: 1_767_225_540_000,
         },
       ],
-      inventory: { crop: 3 },
+      inventory: { crop: 3, log: 0 },
       destination: { x: 3, y: 3 },
       movement: {
         continuousPosition: { x: 2.5, y: 2 },
@@ -152,7 +214,7 @@ describe("versioned game saves", () => {
           lastWateredAt: 1_767_225_540_000,
         },
       ],
-      inventory: { crop: 12 },
+      inventory: { crop: 12, log: 0 },
     };
     const saveData = createSaveData(game, 1_767_225_600_000);
 
@@ -233,7 +295,7 @@ describe("versioned game saves", () => {
           lastWateredAt: savedAt - 30_000,
         },
       ],
-      inventory: { crop: 7 },
+      inventory: { crop: 7, log: 0 },
       destination: { x: 4, y: 2 },
       pendingTarget: { kind: "tree" as const, position: { x: 4, y: 1 } },
       activeAction: {
@@ -251,7 +313,7 @@ describe("versioned game saves", () => {
       character: { position: { x: 3, y: 2 }, facing: "south", state: "idle" },
       trees: game.trees,
       crops: game.crops,
-      inventory: { crop: 7 },
+      inventory: { crop: 7, log: 0 },
     });
     expect(restored.destination).toBeUndefined();
     expect(restored.pendingTarget).toBeUndefined();
@@ -261,6 +323,7 @@ describe("versioned game saves", () => {
   it.each([
     null,
     "not json",
+    JSON.stringify({ version: 2 }),
     JSON.stringify({ version: saveVersion + 1 }),
     JSON.stringify({ version: saveVersion, savedAt: 1_767_225_600_000 }),
   ])("rejects unavailable, malformed, incompatible, and incomplete save data", (serialized) => {
@@ -293,7 +356,7 @@ describe("versioned game saves", () => {
           lastWateredAt: now - wateringCooldownMs,
         },
       ],
-      inventory: { crop: 3 },
+      inventory: { crop: 3, log: 0 },
     };
 
     const restored = restoreGame(serializeGame(game, now - 1), now, () => 0.99);
@@ -301,7 +364,7 @@ describe("versioned game saves", () => {
     expect(restored).toMatchObject({
       character: { position: { x: 3, y: 2 }, facing: "south", state: "idle" },
       trees: [],
-      inventory: { crop: 3 },
+      inventory: { crop: 3, log: 0 },
     });
     expect(restored.destination).toBeUndefined();
     expect(restored.pendingTarget).toBeUndefined();

@@ -92,7 +92,7 @@ export function createNewGame(
         growthReadyAt: null,
       },
     ],
-    inventory: { crop: 0 },
+    inventory: { crop: 0, log: 0 },
     lastTreeGenerationAttemptAt: now,
   };
 }

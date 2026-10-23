@@ -13,7 +13,7 @@ import { resultMessages, setResultMessage } from "./messages";
 import { normalizeTime } from "./time";
 import { createNewGame } from "./world";
 
-export const saveVersion = 2;
+export const saveVersion = 3;
 export const saveStorageKey = `sprout-tok:save:v${saveVersion}`;
 
 export interface SaveData {
@@ -262,7 +262,9 @@ function parseCrop(value: unknown, map: GameMap): Crop | undefined {
 }
 
 function parseInventory(value: unknown): Inventory | undefined {
-  return isRecord(value) && isNonNegativeInteger(value.crop) ? { crop: value.crop } : undefined;
+  return isRecord(value) && isNonNegativeInteger(value.crop) && isNonNegativeInteger(value.log)
+    ? { crop: value.crop, log: value.log }
+    : undefined;
 }
 
 function copyParcel(parcel: Parcel): Parcel {

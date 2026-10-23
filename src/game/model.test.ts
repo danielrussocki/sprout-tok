@@ -42,7 +42,7 @@ describe("game domain model", () => {
       stage: 1 | 2 | 3 | 4;
       growthReadyAt?: number | null;
     }>();
-    expectTypeOf<Inventory>().toEqualTypeOf<{ crop: number }>();
+    expectTypeOf<Inventory>().toEqualTypeOf<{ crop: number; log: number }>();
     expectTypeOf<ActiveAction>().toMatchTypeOf<{
       id: string;
       kind: "tilling dirt" | "chopping" | "watering";

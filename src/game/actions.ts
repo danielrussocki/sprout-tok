@@ -132,6 +132,12 @@ export function completeAction(game: GameState, actionId: string, now: number): 
   }
 
   if (activeAction.kind === "chopping") {
+    const choppedTree = game.trees.find(
+      (tree) =>
+        tree.status === "available" &&
+        tree.position.x === activeAction.target.x &&
+        tree.position.y === activeAction.target.y,
+    );
     const updatedTrees = game.trees.map((tree) => {
       const isTarget =
         tree.position.x === activeAction.target.x && tree.position.y === activeAction.target.y;
@@ -141,7 +147,14 @@ export function completeAction(game: GameState, actionId: string, now: number): 
         : tree;
     });
 
-    return cancelActiveAction({ ...game, trees: updatedTrees });
+    return cancelActiveAction({
+      ...game,
+      trees: updatedTrees,
+      inventory:
+        choppedTree === undefined
+          ? game.inventory
+          : { ...game.inventory, log: game.inventory.log + 1 },
+    });
   }
 
   const updatedCrops = game.crops.map((crop) => {

@@ -66,6 +66,7 @@ export interface Crop {
 
 export interface Inventory {
   crop: number;
+  log: number;
 }
 
 export type ActionKind = "tilling dirt" | "chopping" | "watering";

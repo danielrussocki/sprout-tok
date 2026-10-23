@@ -22,6 +22,10 @@ export function StatusPanel({ game }: StatusPanelProps) {
           <dd>{game.inventory.crop} cultivos</dd>
         </div>
         <div className="flex justify-between gap-4">
+          <dt>Troncos</dt>
+          <dd>{game.inventory.log} troncos</dd>
+        </div>
+        <div className="flex justify-between gap-4">
           <dt>Estado</dt>
           <dd>{stateLabels[game.character.state]}</dd>
         </div>

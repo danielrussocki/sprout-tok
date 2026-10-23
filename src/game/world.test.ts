@@ -61,7 +61,7 @@ describe("createNewGame", () => {
       { id: "crop-1", position: { x: 1, y: 1 }, stage: 1, growthReadyAt: null },
       { id: "crop-2", position: { x: 2, y: 1 }, stage: 1, growthReadyAt: null },
     ]);
-    expect(game.inventory).toEqual({ crop: 0 });
+    expect(game.inventory).toEqual({ crop: 0, log: 0 });
   });
 
   it("initializes the last tree generation attempt at the received time", () => {
@@ -115,7 +115,7 @@ describe("world queries", () => {
       character: { position: { x: 0, y: 0 }, facing: "east", state: "idle" },
       trees: [],
       crops: [],
-      inventory: { crop: 0 },
+      inventory: { crop: 0, log: 0 },
       lastTreeGenerationAttemptAt: 0,
     };
 
@@ -146,7 +146,7 @@ describe("world queries", () => {
       character: { position: { x: 0, y: 0 }, facing: "east", state: "idle" },
       trees: [],
       crops: [],
-      inventory: { crop: 0 },
+      inventory: { crop: 0, log: 0 },
       lastTreeGenerationAttemptAt: 0,
     };
 
@@ -206,7 +206,7 @@ describe("tree placement connectivity", () => {
       character: { position: { x: 0, y: 0 }, facing: "east", state: "idle" },
       trees: [],
       crops: [],
-      inventory: { crop: 0 },
+      inventory: { crop: 0, log: 0 },
       lastTreeGenerationAttemptAt: 0,
     };
 
@@ -227,7 +227,7 @@ describe("tree placement connectivity", () => {
       character: { position: { x: 0, y: 0 }, facing: "east", state: "idle" },
       trees: [],
       crops: [],
-      inventory: { crop: 0 },
+      inventory: { crop: 0, log: 0 },
       lastTreeGenerationAttemptAt: 0,
     };
 
@@ -250,7 +250,7 @@ describe("tree generation parcel validation", () => {
       character: { position: { x: 0, y: 0 }, facing: "east", state: "idle" },
       trees: [],
       crops: [],
-      inventory: { crop: 0 },
+      inventory: { crop: 0, log: 0 },
       lastTreeGenerationAttemptAt: 0,
     };
 
@@ -286,7 +286,7 @@ describe("tree generation parcel validation", () => {
       character: { position: { x: 0, y: 0 }, facing: "east", state: "idle" },
       trees: [],
       crops: [],
-      inventory: { crop: 0 },
+      inventory: { crop: 0, log: 0 },
       lastTreeGenerationAttemptAt: 0,
     };
 
@@ -313,7 +313,7 @@ describe("tree generation parcel validation", () => {
       character: { position: { x: 0, y: 0 }, facing: "east", state: "idle" },
       trees: [],
       crops: [],
-      inventory: { crop: 0 },
+      inventory: { crop: 0, log: 0 },
       lastTreeGenerationAttemptAt: 0,
     };
 
@@ -346,7 +346,7 @@ describe("generateTree", () => {
         character: { position: { x: 0, y: 0 }, facing: "east", state: "idle" },
         trees: [],
         crops: [],
-        inventory: { crop: 0 },
+        inventory: { crop: 0, log: 0 },
         lastTreeGenerationAttemptAt: 0,
       };
 
@@ -368,7 +368,7 @@ describe("generateTree", () => {
       character: { position: { x: 0, y: 0 }, facing: "east", state: "idle" },
       trees: [],
       crops: [],
-      inventory: { crop: 0 },
+      inventory: { crop: 0, log: 0 },
       lastTreeGenerationAttemptAt: 0,
     };
 
@@ -389,7 +389,7 @@ describe("generateTree", () => {
       character: { position: { x: 2, y: 2 }, facing: "west", state: "idle" },
       trees: [{ id: "tree-1", position: { x: 0, y: 0 }, status: "available" }],
       crops: [],
-      inventory: { crop: 0 },
+      inventory: { crop: 0, log: 0 },
       lastTreeGenerationAttemptAt: 0,
     };
 

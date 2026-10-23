@@ -34,6 +34,7 @@ El sistema deberá permitir al jugador seleccionar un destino mediante clic o to
 
 - **Criterio de aceptación:** Cuando el jugador seleccione un destino válido sin objetivo interactuable, el personaje deberá abandonar `idle` y desplazarse hacia ese destino.
 - **Criterio de aceptación:** Mientras el personaje se desplaza, el sistema deberá mostrar `walking`.
+- **Criterio de aceptación:** Mientras el personaje se desplace entre su posición inicial y el destino, el sistema deberá actualizar su posición visual de forma continua a lo largo del recorrido, sin que aparezca directamente en el destino.
 - **Criterio de aceptación:** Cuando el personaje alcance su destino o no tenga un destino válido, el sistema deberá mostrar `idle`.
 - **Criterio de aceptación:** Cuando el jugador seleccione un nuevo destino u objetivo mientras el personaje se desplaza, el sistema deberá cancelar el destino y la interacción pendiente anteriores y atender únicamente la última selección.
 

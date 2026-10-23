@@ -155,3 +155,27 @@
 - [x] 39. Repetir la verificación completa de la spec y actualizar el veredicto de cumplimiento.
   - **RF:** RF-1 a RF-7.
   - **Hecho cuando:** las tareas 36 a 38 están cubiertas por pruebas aprobadas y la verificación manual confirma los criterios de finalización y todos los casos límite definidos.
+
+- [ ] 40. Representar el desplazamiento pendiente como una ruta ordenada de parcelas y avanzar la posición lógica una parcela por llegada.
+  - **RF:** RF-1, RF-2, RF-3.
+  - **Hecho cuando:** un destino o una interacción pendiente conserva una ruta transitable por tramos, la posición lógica no salta al destino y solo avanza al confirmar cada llegada.
+
+- [ ] 41. Probar el avance de rutas por parcelas consecutivas y la llegada final.
+  - **RF:** RF-1, RF-2, RF-3.
+  - **Hecho cuando:** las pruebas verifican que el personaje conserva `walking` entre tramos, alcanza `idle` solo tras el último tramo y resuelve la interacción pendiente únicamente al completar la ruta.
+
+- [ ] 42. Conectar el final de cada tramo visual con la intención `arrive` de la lógica.
+  - **RF:** RF-2, RF-3.
+  - **Hecho cuando:** al terminar un tramo se confirma una única llegada, se inicia el siguiente tramo cuando exista y la acción contextual solo comienza después de la llegada final.
+
+- [ ] 43. Interpolar en la escena la posición visual del personaje entre la parcela lógica actual y la siguiente de la ruta.
+  - **RF:** RF-2.
+  - **Hecho cuando:** durante cada tramo el personaje se renderiza en posiciones intermedias y no aparece directamente en la parcela de destino.
+
+- [ ] 44. Reiniciar la interpolación visual al sustituir una orden, cancelar una acción o completar una ruta.
+  - **RF:** RF-2, RF-3.
+  - **Hecho cuando:** una nueva selección descarta el tramo visual anterior y la posición renderizada vuelve a coincidir con la posición lógica al quedar `idle` o iniciar una acción.
+
+- [ ] 45. Realizar la verificación manual del desplazamiento continuo y de la sustitución de órdenes durante una ruta.
+  - **RF:** RF-2, RF-3.
+  - **Hecho cuando:** se confirma con clic y toque que el personaje recorre visualmente cada tramo, solo atiende el último destino u objetivo seleccionado y no inicia una acción antes de llegar a la parcela adyacente.

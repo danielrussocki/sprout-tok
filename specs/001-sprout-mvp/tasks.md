@@ -223,3 +223,59 @@
 - [x] 56. Repetir la verificación completa de la spec tras corregir la interacción contextual.
   - **RF:** RF-1 a RF-7.
   - **Hecho cuando:** las tareas 54 y 55 están aprobadas, todos los criterios de finalización se verifican y el veredicto de cumplimiento de la spec es favorable.
+
+- [ ] 57. Extender el modelo de dominio y la partida nueva con la marca del último intento de generación de árboles.
+  - **RF:** RF-8.
+  - **Hecho cuando:** el estado persistente incluye `lastTreeGenerationAttemptAt` y una partida nueva lo inicializa sin introducir tipos implícitos ni estado de interfaz.
+
+- [ ] 58. Implementar la consulta pura de parcelas de césped candidatas que excluye las adyacentes a tierra de cultivo.
+  - **RF:** RF-8.
+  - **Hecho cuando:** la consulta devuelve solo parcelas de césped y descarta cada parcela con una tierra de cultivo al norte, este, sur u oeste.
+
+- [ ] 59. Implementar la validación pura de conectividad al ocupar una parcela candidata con un árbol.
+  - **RF:** RF-8.
+  - **Hecho cuando:** una parcela se rechaza si convertirla en no transitable elimina una conexión existente entre parcelas transitables.
+
+- [ ] 60. Probar el filtrado de candidatas y la preservación de conexiones transitables.
+  - **RF:** RF-8.
+  - **Hecho cuando:** las pruebas cubren césped válido, los cuatro lados adyacentes a tierra de cultivo, un cuello de botella bloqueado y una parcela que conserva las conexiones.
+
+- [ ] 61. Implementar la generación pura de un árbol vivo en una parcela válida elegida con aleatoriedad recibida.
+  - **RF:** RF-8.
+  - **Hecho cuando:** la regla crea un único árbol vivo en una candidata válida, permite que sea adyacente a otro árbol y no modifica el estado si no hay candidatas o ya existen cinco árboles vivos o reducidos.
+
+- [ ] 62. Probar la generación aleatoria controlada, el estado vivo y el límite de cinco árboles.
+  - **RF:** RF-8.
+  - **Hecho cuando:** las pruebas verifican la selección esperada para valores aleatorios controlados, la adyacencia permitida, el estado vivo y el bloqueo del sexto árbol incluidos los reducidos.
+
+- [ ] 63. Extender la normalización temporal para procesar cada intervalo vencido de cinco minutos y registrar todo intento.
+  - **RF:** RF-8.
+  - **Hecho cuando:** al alcanzar un intervalo se intenta una generación, se actualiza la marca incluso si falla y cada intervalo adicional vencido se procesa en orden.
+
+- [ ] 64. Probar la cadencia de cinco minutos, los intentos fallidos y los intervalos acumulados.
+  - **RF:** RF-8.
+  - **Hecho cuando:** las pruebas cubren el instante exacto de cinco minutos, la espera de otros cinco minutos tras alcanzar el límite o no hallar candidatas y el procesamiento de varios intervalos vencidos.
+
+- [ ] 65. Incluir la marca del último intento de generación en el guardado versionado y su validación segura.
+  - **RF:** RF-8 y requisitos no funcionales.
+  - **Hecho cuando:** un guardado válido conserva la marca de generación y un dato ausente, inválido o incompatible se descarta mediante el flujo seguro existente.
+
+- [ ] 66. Normalizar la generación de árboles al restaurar una partida con tiempo real transcurrido.
+  - **RF:** RF-8 y requisitos no funcionales.
+  - **Hecho cuando:** al restaurar se procesan en orden todos los intervalos vencidos desde la marca guardada, respetando candidatas, conectividad y el máximo de cinco árboles.
+
+- [ ] 67. Probar el guardado y la restauración de la generación periódica.
+  - **RF:** RF-8 y requisitos no funcionales.
+  - **Hecho cuando:** las pruebas verifican la persistencia de la marca, los intervalos transcurridos con el juego cerrado y el descarte seguro de guardados inválidos.
+
+- [ ] 68. Enviar pulsos con hora y aleatoriedad desde la interfaz para normalizar la generación periódica sin incorporar reglas en React o PixiJS.
+  - **RF:** RF-8.
+  - **Hecho cuando:** la capa de interfaz solicita la regla pura de tiempo durante la partida y al restaurar, y guarda cada cambio persistente resultante.
+
+- [ ] 69. Actualizar la escena para representar los árboles generados por el estado de juego.
+  - **RF:** RF-8.
+  - **Hecho cuando:** un árbol creado por la lógica aparece como árbol vivo en su parcela de césped y desaparece de la escena al dejar de existir en el estado.
+
+- [ ] 70. Realizar la verificación manual de la generación periódica de árboles y actualizar el veredicto de cumplimiento.
+  - **RF:** RF-8.
+  - **Hecho cuando:** se confirma que los árboles aparecen cada cinco minutos en césped válido, no bloquean accesos ni tierras de cultivo, respetan el máximo de cinco y se conservan correctamente tras cerrar y reabrir el juego.

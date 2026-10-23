@@ -16,6 +16,7 @@ El jugador debe desplazarse hacia un punto elegido y transformar el entorno al l
 - Como jugador, quiero interactuar con tierra, árboles y plantas, para alterar la granja y comprobar las acciones disponibles.
 - Como jugador, quiero plantar, regar y cosechar cultivos, para experimentar un ciclo básico de producción.
 - Como jugador, quiero que los riegos repetidos no aceleren artificialmente un cultivo, para que el crecimiento tenga reglas comprensibles.
+- Como jugador, quiero que aparezcan árboles nuevos sin cerrar caminos del mapa ni invadir mis cultivos, para que la granja cambie sin impedir mis acciones.
 
 ## Requisitos funcionales
 
@@ -85,6 +86,18 @@ El sistema deberá permitir cosechar un cultivo que haya alcanzado su estado cos
 - **Criterio de aceptación:** Cuando el jugador seleccione un cultivo cosechable y el personaje esté al alcance, el sistema deberá retirarlo de su parcela y añadir una unidad del cultivo al inventario, sin límite de capacidad ni estado de acción adicional.
 - **Criterio de aceptación:** Cuando el jugador seleccione un cultivo que aún no sea cosechable, el sistema no deberá retirarlo ni avanzar su crecimiento.
 
+### RF-8. Generación periódica de árboles
+
+El sistema deberá generar árboles vivos de forma aleatoria en el mapa, sin impedir el acceso a sus zonas transitables ni ocupar el entorno de las tierras de cultivo.
+
+- **Criterio de aceptación:** Cuando transcurran cinco minutos desde la última generación de árboles, el sistema deberá intentar generar un árbol nuevo.
+- **Criterio de aceptación:** Cuando el sistema genere un árbol nuevo, deberá situarlo aleatoriamente en una parcela de césped.
+- **Criterio de aceptación:** Cuando una parcela de césped candidata tenga una parcela de tierra de cultivo adyacente, el sistema no deberá generar un árbol en ella.
+- **Criterio de aceptación:** Cuando una parcela de césped candidata impida que alguna zona transitable del mapa siga siendo accesible desde las demás zonas transitables, el sistema no deberá generar un árbol en ella.
+- **Criterio de aceptación:** Cuando existan varias parcelas de césped válidas, el sistema podrá generar árboles en parcelas adyacentes entre sí.
+- **Criterio de aceptación:** Cuando se genere un árbol nuevo, deberá estar vivo; el sistema no deberá generarlo reducido.
+- **Criterio de aceptación:** Cuando el mapa ya contenga cinco árboles, vivos o reducidos, el sistema no deberá generar otro árbol.
+
 ## Requisitos no funcionales
 
 - La interacción mediante clic y toque deberá ofrecer el mismo resultado para un mismo objetivo.
@@ -105,13 +118,16 @@ El sistema deberá permitir cosechar un cultivo que haya alcanzado su estado cos
 - Regar exactamente al cumplirse un minuto desde el último riego válido: el nuevo riego deberá ser válido.
 - Cerrar el juego durante una acción de tres segundos: al volver, la acción deberá estar cancelada, el objetivo sin cambios y el personaje en `idle`.
 - No existir una parcela transitable adyacente a un objetivo: la interacción deberá ignorarse y deberá mostrarse un mensaje al jugador.
+- Transcurrir cinco minutos cuando ya existan cinco árboles, incluidos árboles reducidos pendientes de desaparecer: no deberá generarse otro árbol.
+- Transcurrir cinco minutos sin parcelas de césped válidas, porque todas son adyacentes a tierra de cultivo o bloquearían el acceso a una zona transitable: no deberá generarse un árbol.
+- Generar un árbol junto a otro árbol cuando ambas parcelas cumplan las condiciones de generación: ambos árboles podrán permanecer adyacentes.
 
 ## Fuera de alcance
 
 - Controles de teclado para el desplazamiento.
 - El estado `running` y cualquier desplazamiento a velocidad de carrera.
 - Apariencia detallada, animaciones finales, audio, economía, herramientas, enemigos, misiones y multijugador.
-- Reaparición de árboles y un ciclo agrícola más allá del crecimiento, plantación y cosecha básicos.
+- Un ciclo agrícola más allá del crecimiento, plantación y cosecha básicos.
 
 ## Criterios de finalización
 
@@ -122,6 +138,7 @@ El sistema deberá permitir cosechar un cultivo que haya alcanzado su estado cos
 - Los efectos de labrar, talar y regar ocurren solo al finalizar sus tres segundos de acción; una nueva orden los cancela sin efecto.
 - Los cultivos plantados pasan de la etapa 1 a la 4 con tres riegos válidos; los cultivos iniciales requieren los riegos restantes según su etapa inicial.
 - Cosechar añade una unidad al inventario sin límite y plantar no consume inventario.
+- Cada cinco minutos se intenta generar un árbol vivo en una parcela de césped válida, sin superar cinco árboles vivos o reducidos ni bloquear el acceso al mapa o las tierras de cultivo.
 - Los casos límite definidos no alteran indebidamente el mapa ni el crecimiento de los cultivos.
 
 ## Dudas abiertas

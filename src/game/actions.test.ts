@@ -51,6 +51,27 @@ describe("action cycle", () => {
     expect(updatedGame.character.state).toBe("idle");
   });
 
+  it("does not replace an active action with a second action", () => {
+    const game = startAction(
+      createNewGame(() => 0),
+      "action-1",
+      "chopping",
+      { x: 4, y: 1 },
+      1_000,
+    );
+
+    const updatedGame = startAction(game, "action-2", "tilling dirt", { x: 1, y: 2 }, 1_500);
+
+    expect(updatedGame.activeAction).toEqual({
+      id: "action-1",
+      kind: "chopping",
+      target: { x: 4, y: 1 },
+      completesAt: 4_000,
+    });
+    expect(updatedGame.character.state).toBe("chopping");
+    expect(updatedGame.message).toBe(resultMessages.unavailableAction);
+  });
+
   it("reduces an available tree only when its chopping action completes after three seconds", () => {
     const target = { x: 4, y: 1 };
     const game = createNewGame(() => 0);
@@ -195,6 +216,24 @@ describe("action cycle", () => {
       { id: "crop-1", position: { x: 1, y: 1 }, stage: 2, lastWateredAt: 4_000 },
       game.crops[1],
     ]);
+  });
+
+  it("does not advance a crop stage until its watering action completes after three seconds", () => {
+    const target = { x: 1, y: 1 };
+    const game = createNewGame(() => 0);
+    const startedGame = startAction(game, "action-1", "watering", target, 1_000);
+
+    const beforeCompletion = completeAction(startedGame, "action-1", 3_999);
+    const completedGame = completeAction(startedGame, "action-1", 4_000);
+
+    expect(startedGame.crops).toEqual(game.crops);
+    expect(beforeCompletion.crops).toEqual(game.crops);
+    expect(completedGame.crops[0]).toEqual({
+      id: "crop-1",
+      position: target,
+      stage: 2,
+      lastWateredAt: 4_000,
+    });
   });
 });
 
@@ -427,4 +466,37 @@ describe("watering a planted crop", () => {
     });
     expect(afterHarvestableStage.activeAction).toBeUndefined();
   });
+});
+
+describe("watering initial crops", () => {
+  it.each([
+    { random: () => 0, initialStage: 1, requiredWaterings: 3 },
+    { random: () => 0.4, initialStage: 2, requiredWaterings: 2 },
+    { random: () => 0.7, initialStage: 3, requiredWaterings: 1 },
+  ] as const)(
+    "brings an initial stage $initialStage crop to stage four after $requiredWaterings valid waterings",
+    ({ random, initialStage, requiredWaterings }) => {
+      const target = { x: 1, y: 1 };
+      let wateredGame = createNewGame(random);
+
+      expect(wateredGame.crops[0]).toMatchObject({ stage: initialStage });
+
+      for (let watering = 0; watering < requiredWaterings; watering += 1) {
+        const startsAt = 1_000 + watering * 63_000;
+        const actionId = `watering-${watering}`;
+        const startedGame = startAction(wateredGame, actionId, "watering", target, startsAt);
+
+        expect(startedGame.crops[0]?.stage).toBe(initialStage + watering);
+
+        wateredGame = completeAction(startedGame, actionId, startsAt + 3_000);
+      }
+
+      expect(wateredGame.crops[0]).toEqual({
+        id: "crop-1",
+        position: target,
+        stage: 4,
+        lastWateredAt: requiredWaterings * 63_000 - 59_000,
+      });
+    },
+  );
 });

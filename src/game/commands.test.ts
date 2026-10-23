@@ -47,12 +47,12 @@ describe("game commands", () => {
   it("starts watering immediately when already adjacent to an eligible crop", () => {
     const game = {
       ...createNewGame(() => 0),
-      character: { position: { x: 1, y: 0 }, facing: "south" as const, state: "idle" as const },
+      character: { position: { x: 1, y: 0 }, facing: "west" as const, state: "idle" as const },
     };
 
     const updatedGame = selectPosition(game, { x: 1, y: 1 }, 1_000);
 
-    expect(updatedGame.character.state).toBe("watering");
+    expect(updatedGame.character).toMatchObject({ facing: "south", state: "watering" });
     expect(updatedGame.destination).toBeUndefined();
     expect(updatedGame.route).toBeUndefined();
     expect(updatedGame.pendingTarget).toBeUndefined();
@@ -158,7 +158,7 @@ describe("game commands", () => {
     });
   });
 
-  it("cancels an active action without effect and processes only the latest order", () => {
+  it("cancels an active action without effect and ignores a new order", () => {
     const game = createNewGame(() => 0);
     const choppingGame = arriveAtFinalDestination(
       selectPosition(game, { x: 4, y: 1 }, 1_000),
@@ -168,18 +168,84 @@ describe("game commands", () => {
 
     const latestOrderGame = selectPosition(choppingGame, { x: 0, y: 1 }, 2_000);
     const obsoleteCompletionGame = completeAction(latestOrderGame, "chop-tree", 4_500);
-    const arrivedGame = arriveAtFinalDestination(obsoleteCompletionGame, 4_500);
 
     expect(latestOrderGame.activeAction).toBeUndefined();
-    expect(latestOrderGame.destination).toEqual({ x: 0, y: 1 });
+    expect(latestOrderGame.character.state).toBe("idle");
+    expect(latestOrderGame.destination).toBeUndefined();
+    expect(latestOrderGame.route).toBeUndefined();
     expect(latestOrderGame.pendingTarget).toBeUndefined();
     expect(obsoleteCompletionGame.trees).toEqual(game.trees);
-    expect(arrivedGame.character).toMatchObject({
-      position: { x: 0, y: 1 },
+    expect(obsoleteCompletionGame.character).toMatchObject({
+      position: { x: 4, y: 0 },
       state: "idle",
     });
-    expect(arrivedGame.activeAction).toBeUndefined();
   });
+
+  it.each([
+    { position: { x: 4, y: 0 }, facing: "south" },
+    { position: { x: 5, y: 1 }, facing: "west" },
+    { position: { x: 4, y: 2 }, facing: "north" },
+    { position: { x: 3, y: 1 }, facing: "east" },
+  ] as const)("faces $facing when chopping from an adjacent parcel", ({ position, facing }) => {
+    const game = {
+      ...createNewGame(() => 0),
+      character: { position, facing: "north" as const, state: "idle" as const },
+    };
+
+    const updatedGame = selectPosition(game, { x: 4, y: 1 }, 1_000);
+
+    expect(updatedGame.character).toMatchObject({ facing, state: "chopping" });
+    expect(updatedGame.activeAction).toMatchObject({
+      kind: "chopping",
+      target: { x: 4, y: 1 },
+    });
+  });
+
+  it.each([
+    {
+      name: "tilling",
+      characterPosition: { x: 0, y: 2 },
+      target: { x: 1, y: 2 },
+      actionId: "till-soil",
+    },
+    {
+      name: "chopping",
+      characterPosition: { x: 4, y: 0 },
+      target: { x: 4, y: 1 },
+      actionId: "chop-tree",
+    },
+    {
+      name: "watering",
+      characterPosition: { x: 1, y: 0 },
+      target: { x: 1, y: 1 },
+      actionId: "water-crop",
+    },
+  ] as const)(
+    "cancels $name without applying its pending effect or accepting the new order",
+    ({ characterPosition, target, actionId }) => {
+      const game = {
+        ...createNewGame(() => 0),
+        character: {
+          position: characterPosition,
+          facing: "north" as const,
+          state: "idle" as const,
+        },
+      };
+      const actingGame = selectPosition(game, target, 1_000);
+      const cancelledGame = selectPosition(actingGame, { x: 0, y: 1 }, 2_000);
+      const completedGame = completeAction(cancelledGame, actionId, 4_000);
+
+      expect(cancelledGame.character.state).toBe("idle");
+      expect(cancelledGame.activeAction).toBeUndefined();
+      expect(cancelledGame.destination).toBeUndefined();
+      expect(cancelledGame.route).toBeUndefined();
+      expect(cancelledGame.movement).toBeUndefined();
+      expect(cancelledGame.pendingTarget).toBeUndefined();
+      expect(completedGame.map).toEqual(game.map);
+      expect(completedGame.trees).toEqual(game.trees);
+      expect(completedGame.crops).toEqual(game.crops);
+    },
+  );
 
   it("advances walking movement to the selection time before replacing its order", () => {
     const walkingGame = selectPosition(

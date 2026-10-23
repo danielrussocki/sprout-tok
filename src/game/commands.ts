@@ -8,7 +8,7 @@ import {
 import { advanceMovementUntil, arriveAtDestination, assignDestination } from "./movement";
 import { findClosestWalkableAdjacentParcel, isValidDestination } from "./navigation";
 import { normalizeTime } from "./time";
-import type { Coordinate, GameState, InteractionTarget } from "./model";
+import type { Coordinate, Direction, GameState, InteractionTarget } from "./model";
 import { getInteractionTargetAt } from "./world";
 
 function clearPendingInteraction(game: GameState): GameState {
@@ -24,6 +24,26 @@ function setIdle(game: GameState): GameState {
     movement: undefined,
     pendingTarget: undefined,
   };
+}
+
+function getDirectionTowards(origin: Coordinate, target: Coordinate): Direction | undefined {
+  if (target.x === origin.x && target.y === origin.y - 1) {
+    return "north";
+  }
+
+  if (target.x === origin.x + 1 && target.y === origin.y) {
+    return "east";
+  }
+
+  if (target.x === origin.x && target.y === origin.y + 1) {
+    return "south";
+  }
+
+  if (target.x === origin.x - 1 && target.y === origin.y) {
+    return "west";
+  }
+
+  return undefined;
 }
 
 function isSoilTarget(game: GameState, target: InteractionTarget): boolean {
@@ -44,17 +64,26 @@ function beginInteraction(
   now: number,
   actionId: string,
 ): GameState {
+  const orientedGame = {
+    ...game,
+    character: {
+      ...game.character,
+      facing:
+        getDirectionTowards(game.character.position, target.position) ?? game.character.facing,
+    },
+  };
+
   if (target.kind === "parcel") {
-    const parcel = game.map.tiles.find(
+    const parcel = orientedGame.map.tiles.find(
       (tile) => tile.position.x === target.position.x && tile.position.y === target.position.y,
     );
 
     if (parcel?.kind === "soil" && parcel.tilled) {
-      return plantCrop(clearPendingInteraction(game), target.position);
+      return plantCrop(clearPendingInteraction(orientedGame), target.position);
     }
 
     return startAction(
-      clearPendingInteraction(game),
+      clearPendingInteraction(orientedGame),
       actionId,
       "tilling dirt",
       target.position,
@@ -63,31 +92,48 @@ function beginInteraction(
   }
 
   if (target.kind === "tree") {
-    const tree = game.trees.find(
+    const tree = orientedGame.trees.find(
       (candidate) =>
         candidate.position.x === target.position.x && candidate.position.y === target.position.y,
     );
 
     return tree?.status === "available"
-      ? startAction(clearPendingInteraction(game), actionId, "chopping", target.position, now)
-      : setResultMessage(setIdle(game), resultMessages.unavailableAction);
+      ? startAction(
+          clearPendingInteraction(orientedGame),
+          actionId,
+          "chopping",
+          target.position,
+          now,
+        )
+      : setResultMessage(setIdle(orientedGame), resultMessages.unavailableAction);
   }
 
-  const crop = game.crops.find(
+  const crop = orientedGame.crops.find(
     (candidate) =>
       candidate.position.x === target.position.x && candidate.position.y === target.position.y,
   );
 
   if (crop?.stage === 4) {
-    return harvestCrop(clearPendingInteraction(game), target.position);
+    return harvestCrop(clearPendingInteraction(orientedGame), target.position);
   }
 
-  return startAction(clearPendingInteraction(game), actionId, "watering", target.position, now);
+  return startAction(
+    clearPendingInteraction(orientedGame),
+    actionId,
+    "watering",
+    target.position,
+    now,
+  );
 }
 
 export function selectPosition(game: GameState, position: Coordinate, now: number): GameState {
   const movedGame = advanceMovementUntil(game, now);
   const normalizedGame = normalizeTime(movedGame, now);
+
+  if (normalizedGame.activeAction !== undefined) {
+    return setIdle(cancelActiveAction(normalizedGame));
+  }
+
   const cancelledGame = cancelActiveAction(normalizedGame);
   const target = getInteractionTargetAt(cancelledGame, position);
 

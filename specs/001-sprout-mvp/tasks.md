@@ -211,3 +211,15 @@
 - [x] 53. Verificar manualmente la redirección continua con clic y toque.
   - **RF:** RF-2, RF-3.
   - **Hecho cuando:** al seleccionar otro destino u objetivo durante un tramo, incluso repetidamente el mismo destino, el personaje cambia de recorrido desde el punto visible actual, sin regresar ni ajustarse al centro de una parcela.
+
+- [x] 54. Corregir la orientación y la cancelación de órdenes durante una acción contextual.
+  - **RF:** RF-3.
+  - **Hecho cuando:** al seleccionar un objetivo desde una parcela adyacente, el personaje se orienta hacia él antes de iniciar la acción; una orden nueva durante una acción de tres segundos la cancela sin modificar el objetivo y deja al personaje en `idle`, sin ejecutar esa orden.
+
+- [x] 55. Probar la orientación adyacente y la cancelación de una orden durante una acción contextual.
+  - **RF:** RF-3.
+  - **Hecho cuando:** las pruebas cubren las cuatro orientaciones desde parcelas adyacentes y verifican que una orden nueva durante labranza, tala o riego no aplica el efecto pendiente ni inicia desplazamiento, interacción o una acción nueva.
+
+- [x] 56. Repetir la verificación completa de la spec tras corregir la interacción contextual.
+  - **RF:** RF-1 a RF-7.
+  - **Hecho cuando:** las tareas 54 y 55 están aprobadas, todos los criterios de finalización se verifican y el veredicto de cumplimiento de la spec es favorable.

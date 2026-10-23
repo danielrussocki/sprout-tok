@@ -63,7 +63,7 @@ El sistema deberá permitir labrar tierra apta y plantar en tierra labrada para 
 
 El sistema deberá permitir talar árboles para modificar el mapa.
 
-- **Criterio de aceptación:** Cuando el personaje actúe sobre un árbol disponible, el sistema deberá mostrar `chopping` durante tres segundos y el árbol deberá reducirse visualmente al terminar la acción.
+- **Criterio de aceptación:** Cuando el personaje actúe sobre un árbol disponible, el sistema deberá mostrar `chopping` durante tres segundos y, al terminar la acción, el árbol deberá reducirse visualmente y el sistema deberá añadir exactamente un tronco al inventario.
 - **Criterio de aceptación:** Cuando hayan transcurrido cinco minutos reales desde que el árbol se redujo, incluso si el juego estuvo cerrado, el sistema deberá eliminarlo del mapa.
 - **Criterio de aceptación:** Cuando el jugador seleccione un árbol que ya ha desaparecido, el sistema no deberá iniciar una acción de tala.
 - **Criterio de aceptación:** Cuando el jugador seleccione un árbol reducido, el sistema deberá ignorar el intento de tala.

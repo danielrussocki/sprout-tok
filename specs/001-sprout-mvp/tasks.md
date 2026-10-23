@@ -335,3 +335,31 @@
 - [x] 84. Realizar la verificación manual del ciclo riego, espera, crecimiento e indicador.
   - **RF:** RF-6, RF-7.
   - **Hecho cuando:** se confirma que regar no cambia la etapa al terminar la acción, que el cultivo crece tras un minuto real incluso después de reabrir el juego y que el indicador solo aparece al poder regar o cosechar.
+
+- [ ] 85. Extender el modelo de inventario y la partida nueva con el contador de troncos.
+  - **RF:** RF-5.
+  - **Hecho cuando:** el estado de dominio representa `log` sin tipos implícitos y una partida nueva inicializa su contador de troncos.
+
+- [ ] 86. Modificar la finalización de una tala válida para reducir el árbol y añadir exactamente un tronco.
+  - **RF:** RF-5.
+  - **Hecho cuando:** al completar `chopping` sobre un árbol disponible, este pasa a reducido y `inventory.log` aumenta en una unidad solo una vez.
+
+- [ ] 87. Probar la entrega de troncos al completar, cancelar o ignorar una tala.
+  - **RF:** RF-5.
+  - **Hecho cuando:** las pruebas unitarias verifican un único tronco tras una tala válida y ningún cambio de inventario antes de terminar, tras cancelarla o al seleccionar un árbol reducido o inexistente.
+
+- [ ] 88. Actualizar el guardado versionado a la versión 3 para incluir el contador de troncos.
+  - **RF:** RF-5 y requisitos no funcionales.
+  - **Hecho cuando:** un guardado válido de versión 3 serializa y restaura `inventory.log`, y los datos sin esa versión o con ese campo inválido se descartan mediante el flujo seguro existente.
+
+- [ ] 89. Probar el guardado y la restauración del inventario de troncos.
+  - **RF:** RF-5 y requisitos no funcionales.
+  - **Hecho cuando:** las pruebas verifican que los troncos obtenidos persisten al reabrir y que un guardado inválido o incompatible inicia una partida nueva con mensaje en español.
+
+- [ ] 90. Mostrar el contador de troncos en el panel de inventario.
+  - **RF:** RF-5.
+  - **Hecho cuando:** tras una tala válida, la interfaz presenta el total de troncos del estado sin calcular ni modificar reglas de juego.
+
+- [ ] 91. Realizar la verificación manual de la tala y persistencia de troncos.
+  - **RF:** RF-5 y requisitos no funcionales.
+  - **Hecho cuando:** se confirma que cada tala válida entrega exactamente un tronco al terminar sus tres segundos, que una tala cancelada no entrega ninguno y que el total se conserva tras cerrar y reabrir el juego.

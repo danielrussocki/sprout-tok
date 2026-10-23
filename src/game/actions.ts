@@ -1,16 +1,9 @@
-import type { ActionKind, Coordinate, CropStage, GameState } from "./model";
+import type { ActionKind, Coordinate, GameState } from "./model";
 import { resultMessages, setResultMessage } from "./messages";
-import { canWaterCrop } from "./time";
+import { canWaterCrop, wateringCooldownMs } from "./time";
 import { isOccupied } from "./world";
 
 export const actionDurationMs = 3_000;
-
-const nextCropStage: Record<CropStage, CropStage> = {
-  1: 2,
-  2: 3,
-  3: 4,
-  4: 4,
-};
 
 function getNextCropId(game: GameState): string {
   const cropIds = new Set(game.crops.map((crop) => crop.id));
@@ -36,7 +29,10 @@ export function plantCrop(game: GameState, target: Coordinate): GameState {
 
   return {
     ...game,
-    crops: [...game.crops, { id: getNextCropId(game), position: { ...target }, stage: 1 }],
+    crops: [
+      ...game.crops,
+      { id: getNextCropId(game), position: { ...target }, stage: 1, growthReadyAt: null },
+    ],
   };
 }
 
@@ -158,7 +154,7 @@ export function completeAction(game: GameState, actionId: string, now: number): 
 
     return {
       ...crop,
-      stage: nextCropStage[crop.stage],
+      growthReadyAt: now + wateringCooldownMs,
       lastWateredAt: now,
     };
   });

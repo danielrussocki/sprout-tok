@@ -53,11 +53,11 @@ describe("result messages", () => {
     expect(updatedGame).toEqual({ ...game, message: resultMessages.unavailableAction });
   });
 
-  it("reports an unavailable action when watering during its cooldown", () => {
+  it("reports an unavailable action when watering during a growth wait", () => {
     const target = { x: 1, y: 1 };
     const game = {
       ...createNewGame(() => 0),
-      crops: [{ id: "crop-1", position: target, stage: 1 as const, lastWateredAt: 1_000 }],
+      crops: [{ id: "crop-1", position: target, stage: 1 as const, growthReadyAt: 61_000 }],
     };
 
     const updatedGame = startAction(game, "action-1", "watering", target, 60_999);

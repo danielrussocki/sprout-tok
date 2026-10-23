@@ -64,11 +64,11 @@ describe("game commands", () => {
     });
   });
 
-  it("reports an unavailable watering action immediately when already adjacent", () => {
+  it("reports an unavailable watering action immediately during a growth wait", () => {
     const game = {
       ...createNewGame(() => 0),
       character: { position: { x: 1, y: 0 }, facing: "south" as const, state: "idle" as const },
-      crops: [{ id: "crop-1", position: { x: 1, y: 1 }, stage: 1 as const, lastWateredAt: 1_000 }],
+      crops: [{ id: "crop-1", position: { x: 1, y: 1 }, stage: 1 as const, growthReadyAt: 61_000 }],
     };
 
     const updatedGame = selectPosition(game, { x: 1, y: 1 }, 60_999);
@@ -405,7 +405,12 @@ describe("game commands", () => {
       2_000,
     );
 
-    expect(plantedGame.crops).toContainEqual({ id: "crop-3", position: target, stage: 1 });
+    expect(plantedGame.crops).toContainEqual({
+      id: "crop-3",
+      position: target,
+      stage: 1,
+      growthReadyAt: null,
+    });
     expect(harvestedGame.crops).not.toContainEqual({ id: "crop-3", position: target, stage: 4 });
     expect(harvestedGame.inventory.crop).toBe(1);
   });

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { completeAction, plantCrop, startAction } from "./actions";
 import type { GameState } from "./model";
 import { canWaterCrop, normalizeTime, treeGenerationIntervalMs } from "./time";
 import { createNewGame } from "./world";
@@ -62,6 +63,163 @@ function createGameWithOnlyDiagonalGrassToSoil(): GameState {
 }
 
 describe("normalizeTime", () => {
+  it("keeps a crop waiting before its growth minute expires", () => {
+    const growthReadyAt = 160_000;
+    const game = {
+      ...createNewGame(() => 0, 100_000),
+      crops: [{ id: "crop-1", position: { x: 1, y: 1 }, stage: 1 as const, growthReadyAt }],
+    };
+
+    const normalizedGame = normalizeTime(game, growthReadyAt - 1);
+
+    expect(normalizedGame).toBe(game);
+    expect(normalizedGame.crops[0]).toEqual({
+      id: "crop-1",
+      position: { x: 1, y: 1 },
+      stage: 1,
+      growthReadyAt,
+    });
+  });
+
+  it("advances a crop at exactly its growth minute and clears the wait", () => {
+    const growthReadyAt = 160_000;
+    const game = {
+      ...createNewGame(() => 0, 100_000),
+      crops: [{ id: "crop-1", position: { x: 1, y: 1 }, stage: 2 as const, growthReadyAt }],
+    };
+
+    const normalizedGame = normalizeTime(game, growthReadyAt);
+
+    expect(normalizedGame.crops[0]).toEqual({
+      id: "crop-1",
+      position: { x: 1, y: 1 },
+      stage: 3,
+      growthReadyAt: null,
+    });
+  });
+
+  it("advances a crop when its growth minute has already expired", () => {
+    const growthReadyAt = 160_000;
+    const game = {
+      ...createNewGame(() => 0, 100_000),
+      crops: [{ id: "crop-1", position: { x: 1, y: 1 }, stage: 3 as const, growthReadyAt }],
+    };
+
+    const normalizedGame = normalizeTime(game, growthReadyAt + 1);
+
+    expect(normalizedGame.crops[0]).toEqual({
+      id: "crop-1",
+      position: { x: 1, y: 1 },
+      stage: 4,
+      growthReadyAt: null,
+    });
+  });
+
+  it("makes a planted crop harvestable after three completed growth waits", () => {
+    const target = { x: 1, y: 2 };
+    const game = createNewGame(() => 0);
+    const tilledGame = {
+      ...game,
+      map: {
+        ...game.map,
+        tiles: game.map.tiles.map((parcel) =>
+          parcel.position.x === target.x && parcel.position.y === target.y
+            ? { ...parcel, tilled: true }
+            : parcel,
+        ),
+      },
+    };
+    const plantedGame = plantCrop(tilledGame, target);
+
+    const afterFirstWait = normalizeTime(
+      completeAction(
+        startAction(plantedGame, "watering-1", "watering", target, 1_000),
+        "watering-1",
+        4_000,
+      ),
+      64_000,
+    );
+    const afterSecondWait = normalizeTime(
+      completeAction(
+        startAction(afterFirstWait, "watering-2", "watering", target, 65_000),
+        "watering-2",
+        68_000,
+      ),
+      128_000,
+    );
+    const afterThirdWait = normalizeTime(
+      completeAction(
+        startAction(afterSecondWait, "watering-3", "watering", target, 129_000),
+        "watering-3",
+        132_000,
+      ),
+      192_000,
+    );
+
+    expect(afterFirstWait.crops.find((crop) => crop.id === "crop-3")).toMatchObject({
+      stage: 2,
+      growthReadyAt: null,
+    });
+    expect(afterSecondWait.crops.find((crop) => crop.id === "crop-3")).toMatchObject({
+      stage: 3,
+      growthReadyAt: null,
+    });
+    expect(afterThirdWait.crops.find((crop) => crop.id === "crop-3")).toMatchObject({
+      stage: 4,
+      growthReadyAt: null,
+    });
+  });
+
+  it("advances each crop with a due growth wait once and clears only its wait", () => {
+    const now = 10_000;
+    const game = {
+      ...createNewGame(() => 0, now),
+      crops: [
+        {
+          id: "crop-due-stage-one",
+          position: { x: 1, y: 1 },
+          stage: 1 as const,
+          growthReadyAt: now,
+        },
+        {
+          id: "crop-due-stage-three",
+          position: { x: 2, y: 1 },
+          stage: 3 as const,
+          growthReadyAt: now - 1,
+        },
+        {
+          id: "crop-waiting",
+          position: { x: 1, y: 2 },
+          stage: 2 as const,
+          growthReadyAt: now + 1,
+        },
+      ],
+    };
+
+    const normalizedGame = normalizeTime(game, now);
+
+    expect(normalizedGame.crops).toEqual([
+      {
+        id: "crop-due-stage-one",
+        position: { x: 1, y: 1 },
+        stage: 2,
+        growthReadyAt: null,
+      },
+      {
+        id: "crop-due-stage-three",
+        position: { x: 2, y: 1 },
+        stage: 4,
+        growthReadyAt: null,
+      },
+      {
+        id: "crop-waiting",
+        position: { x: 1, y: 2 },
+        stage: 2,
+        growthReadyAt: now + 1,
+      },
+    ]);
+  });
+
   it("generates a tree and records the attempt at the exact five-minute interval", () => {
     const game = createNewGame(() => 0, 0);
 
@@ -210,26 +368,15 @@ describe("canWaterCrop", () => {
     );
   });
 
-  it("blocks a crop before one minute has elapsed since its last valid watering", () => {
-    const lastWateredAt = 10_000;
+  it("blocks a crop with a pending growth wait", () => {
+    const growthReadyAt = 70_000;
 
     expect(
       canWaterCrop(
-        { id: "crop-1", position: { x: 1, y: 1 }, stage: 2, lastWateredAt },
-        lastWateredAt + 60_000 - 1,
+        { id: "crop-1", position: { x: 1, y: 1 }, stage: 2, growthReadyAt },
+        growthReadyAt,
       ),
     ).toBe(false);
-  });
-
-  it("allows a crop at exactly one minute since its last valid watering", () => {
-    const lastWateredAt = 10_000;
-
-    expect(
-      canWaterCrop(
-        { id: "crop-1", position: { x: 1, y: 1 }, stage: 3, lastWateredAt },
-        lastWateredAt + 60_000,
-      ),
-    ).toBe(true);
   });
 
   it("never allows a stage four crop to be watered", () => {

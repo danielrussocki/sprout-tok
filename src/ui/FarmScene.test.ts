@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest";
-import type { Tree } from "../game/model";
+import type { Crop, Tree } from "../game/model";
 import { drawTrees } from "./FarmSceneTrees";
 import { createSelectionHandler } from "./FarmSceneSelection";
-import { characterVisuals, cropVisuals, tileVisuals, treeVisuals } from "./FarmSceneVisuals";
+import {
+  characterVisuals,
+  cropVisuals,
+  getCropIndicatorPosition,
+  shouldShowCropIndicator,
+  tileVisuals,
+  treeVisuals,
+} from "./FarmSceneVisuals";
 
 function createRecordingGraphics() {
   const circles: Array<[number, number, number]> = [];
@@ -49,6 +56,36 @@ describe("FarmScene visual vocabulary", () => {
 
   it("gives each crop stage a distinct visual size", () => {
     expect(Object.values(cropVisuals).map((crop) => crop.height)).toEqual([12, 19, 26, 33]);
+  });
+
+  it.each([1, 2, 3, 4] as const)(
+    "shows the green indicator for an eligible stage %i crop",
+    (stage) => {
+      const crop: Crop = {
+        id: "crop-1",
+        position: { x: 1, y: 1 },
+        stage,
+        growthReadyAt: null,
+      };
+
+      expect(shouldShowCropIndicator(crop)).toBe(true);
+    },
+  );
+
+  it("hides the green indicator while a crop is waiting to grow", () => {
+    const crop: Crop = {
+      id: "crop-1",
+      position: { x: 1, y: 1 },
+      stage: 2,
+      growthReadyAt: 61_000,
+    };
+
+    expect(shouldShowCropIndicator(crop)).toBe(false);
+  });
+
+  it("aligns eligible crop indicators at a fixed height above every crop stage", () => {
+    expect(getCropIndicatorPosition({ x: 0, y: 0 })).toEqual({ x: 52, y: 30 });
+    expect(getCropIndicatorPosition({ x: 1, y: 0 })).toEqual({ x: 124, y: 30 });
   });
 
   it("gives every character state a distinct visual marker", () => {

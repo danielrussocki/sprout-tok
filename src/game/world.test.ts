@@ -58,8 +58,8 @@ describe("createNewGame", () => {
       { id: "tree-2", position: { x: 5, y: 4 }, status: "available" },
     ]);
     expect(game.crops).toEqual([
-      { id: "crop-1", position: { x: 1, y: 1 }, stage: 1 },
-      { id: "crop-2", position: { x: 2, y: 1 }, stage: 1 },
+      { id: "crop-1", position: { x: 1, y: 1 }, stage: 1, growthReadyAt: null },
+      { id: "crop-2", position: { x: 2, y: 1 }, stage: 1, growthReadyAt: null },
     ]);
     expect(game.inventory).toEqual({ crop: 0 });
   });
@@ -81,8 +81,8 @@ describe("createNewGame", () => {
       const game = createNewGame(() => randomValue);
 
       expect(game.crops).toEqual([
-        { id: "crop-1", position: { x: 1, y: 1 }, stage },
-        { id: "crop-2", position: { x: 2, y: 1 }, stage },
+        { id: "crop-1", position: { x: 1, y: 1 }, stage, growthReadyAt: null },
+        { id: "crop-2", position: { x: 2, y: 1 }, stage, growthReadyAt: null },
       ]);
     },
   );

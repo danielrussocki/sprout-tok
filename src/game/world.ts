@@ -79,8 +79,18 @@ export function createNewGame(
       { id: "tree-2", position: { x: 5, y: 4 }, status: "available" },
     ],
     crops: [
-      { id: "crop-1", position: { x: 1, y: 1 }, stage: getInitialCropStage(random) },
-      { id: "crop-2", position: { x: 2, y: 1 }, stage: getInitialCropStage(random) },
+      {
+        id: "crop-1",
+        position: { x: 1, y: 1 },
+        stage: getInitialCropStage(random),
+        growthReadyAt: null,
+      },
+      {
+        id: "crop-2",
+        position: { x: 2, y: 1 },
+        stage: getInitialCropStage(random),
+        growthReadyAt: null,
+      },
     ],
     inventory: { crop: 0 },
     lastTreeGenerationAttemptAt: now,

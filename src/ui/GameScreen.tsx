@@ -4,12 +4,11 @@ import { completeAction } from "../game/actions";
 import { advanceMovement, selectPosition } from "../game/commands";
 import type { Coordinate } from "../game/model";
 import { restoreGame, saveStorageKey, serializeGame } from "../game/save";
-import { normalizeTime } from "../game/time";
 import { FarmScene } from "./FarmScene";
 import { farmSceneSize } from "./FarmSceneVisuals";
 import { startMovementPulse } from "./movementPulse";
 import { StatusPanel } from "./StatusPanel";
-import { startTimePulse } from "./timePulse";
+import { advanceTimePulse, startTimePulse } from "./timePulse";
 
 function loadGame() {
   return restoreGame(localStorage.getItem(saveStorageKey), Date.now(), Math.random);
@@ -26,7 +25,7 @@ export function GameScreen() {
   useEffect(
     () =>
       startTimePulse((now, random) => {
-        setGame((currentGame) => normalizeTime(currentGame, now, random));
+        setGame((currentGame) => advanceTimePulse(currentGame, now, random));
       }),
     [],
   );

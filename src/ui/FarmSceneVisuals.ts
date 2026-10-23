@@ -1,4 +1,4 @@
-import type { CharacterState, CropStage } from "../game/model";
+import type { CharacterState, Coordinate, Crop, CropStage } from "../game/model";
 
 const cellSize = 72;
 const mapPadding = 16;
@@ -26,6 +26,23 @@ export const cropVisuals: Record<CropStage, { color: number; height: number; lea
     3: { color: 0x368a35, height: 26, leafRadius: 8 },
     4: { color: 0xe6b84a, height: 33, leafRadius: 10 },
   };
+
+export const cropIndicatorVisual = {
+  color: 0x39a845,
+  radius: 6,
+  topOffset: 14,
+} as const;
+
+export function getCropIndicatorPosition(position: Coordinate) {
+  return {
+    x: mapPadding + position.x * cellSize + cellSize / 2,
+    y: mapPadding + position.y * cellSize + cropIndicatorVisual.topOffset,
+  };
+}
+
+export function shouldShowCropIndicator(crop: Crop): boolean {
+  return crop.growthReadyAt == null;
+}
 
 export const characterVisuals: Record<
   CharacterState,

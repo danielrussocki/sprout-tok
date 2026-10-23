@@ -13,7 +13,7 @@ import { resultMessages, setResultMessage } from "./messages";
 import { normalizeTime } from "./time";
 import { createNewGame } from "./world";
 
-export const saveVersion = 1;
+export const saveVersion = 2;
 export const saveStorageKey = `sprout-tok:save:v${saveVersion}`;
 
 export interface SaveData {
@@ -239,17 +239,24 @@ function parseCrop(value: unknown, map: GameMap): Crop | undefined {
     !isCoordinate(value.position) ||
     !isPositionInMap(value.position, map) ||
     !isCropStage(value.stage) ||
+    (value.growthReadyAt !== null && !isTimestamp(value.growthReadyAt)) ||
     (value.lastWateredAt !== undefined && !isTimestamp(value.lastWateredAt))
   ) {
     return undefined;
   }
 
   return value.lastWateredAt === undefined
-    ? { id: value.id, position: { ...value.position }, stage: value.stage }
+    ? {
+        id: value.id,
+        position: { ...value.position },
+        stage: value.stage,
+        growthReadyAt: value.growthReadyAt,
+      }
     : {
         id: value.id,
         position: { ...value.position },
         stage: value.stage,
+        growthReadyAt: value.growthReadyAt,
         lastWateredAt: value.lastWateredAt,
       };
 }

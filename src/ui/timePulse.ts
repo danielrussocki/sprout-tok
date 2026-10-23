@@ -1,3 +1,6 @@
+import type { GameState } from "../game/model";
+import { normalizeTime } from "../game/time";
+
 interface TimePulseOptions {
   now: () => number;
   random: () => number;
@@ -11,6 +14,10 @@ const browserTimePulseOptions: TimePulseOptions = {
   requestFrame: (callback) => window.requestAnimationFrame(callback),
   cancelFrame: (frameId) => window.cancelAnimationFrame(frameId),
 };
+
+export function advanceTimePulse(game: GameState, now: number, random: () => number): GameState {
+  return normalizeTime(game, now, random);
+}
 
 export function startTimePulse(
   onPulse: (now: number, random: () => number) => void,

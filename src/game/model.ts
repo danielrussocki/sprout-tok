@@ -60,6 +60,7 @@ export interface Crop {
   id: string;
   position: Coordinate;
   stage: CropStage;
+  growthReadyAt?: number | null;
   lastWateredAt?: number;
 }
 

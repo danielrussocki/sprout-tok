@@ -296,42 +296,42 @@
   - **RF:** RF-8.
   - **Hecho cuando:** con un mapa que contenga candidatas ortogonales, diagonales y válidas, solo se observa la generación en la candidata válida.
 
-- [ ] 75. Extender el modelo de cultivo y la creación de partidas con la marca opcional `growthReadyAt`.
+- [x] 75. Extender el modelo de cultivo y la creación de partidas con la marca opcional `growthReadyAt`.
   - **RF:** RF-1, RF-6.
   - **Hecho cuando:** los cultivos nuevos e iniciales se crean regables con `growthReadyAt` nulo y el tipo de dominio representa una espera de crecimiento sin datos de interfaz.
 
-- [ ] 76. Modificar la finalización de un riego para iniciar una espera de crecimiento de un minuto sin avanzar la etapa.
+- [x] 76. Modificar la finalización de un riego para iniciar una espera de crecimiento de un minuto sin avanzar la etapa.
   - **RF:** RF-3, RF-6.
   - **Hecho cuando:** al completar `watering` se conserva la etapa del cultivo y se registra `growthReadyAt` a un minuto de la hora de finalización.
 
-- [ ] 77. Probar que el riego inicia la espera y se ignora durante ella.
+- [x] 77. Probar que el riego inicia la espera y se ignora durante ella.
   - **RF:** RF-6.
   - **Hecho cuando:** las pruebas unitarias confirman que el riego no adelanta la etapa, que no se puede iniciar otro riego con una espera pendiente y que la etapa 4 sigue sin ser regable.
 
-- [ ] 78. Extender la normalización temporal pura para resolver esperas de crecimiento vencidas.
+- [x] 78. Extender la normalización temporal pura para resolver esperas de crecimiento vencidas.
   - **RF:** RF-6.
   - **Hecho cuando:** cada cultivo con `growthReadyAt` igual o anterior a `now` avanza exactamente una etapa y elimina su marca de espera, sin encadenar otro crecimiento.
 
-- [ ] 79. Probar el vencimiento de la espera de crecimiento y la transición a cosechable.
+- [x] 79. Probar el vencimiento de la espera de crecimiento y la transición a cosechable.
   - **RF:** RF-6.
   - **Hecho cuando:** las pruebas cubren antes, justo en y después del minuto; verifican tres esperas para un cultivo plantado y que la última deja el cultivo en etapa 4.
 
-- [ ] 80. Actualizar el guardado versionado a la versión 2 para persistir `growthReadyAt`.
+- [x] 80. Actualizar el guardado versionado a la versión 2 para persistir `growthReadyAt`.
   - **RF:** RF-6 y requisitos no funcionales.
   - **Hecho cuando:** un guardado válido de versión 2 conserva la espera pendiente y los guardados de versiones incompatibles se descartan mediante el flujo seguro existente.
 
-- [ ] 81. Probar la restauración de cultivos con una espera de crecimiento pendiente o vencida.
+- [x] 81. Probar la restauración de cultivos con una espera de crecimiento pendiente o vencida.
   - **RF:** RF-6 y requisitos no funcionales.
   - **Hecho cuando:** las pruebas verifican que, al restaurar, una espera conserva su tiempo restante o hace crecer una sola etapa si ya venció mientras el juego estaba cerrado.
 
-- [ ] 82. Conectar los pulsos de tiempo y el guardado de la interfaz con la normalización del crecimiento pendiente.
+- [x] 82. Conectar los pulsos de tiempo y el guardado de la interfaz con la normalización del crecimiento pendiente.
   - **RF:** RF-6 y requisitos no funcionales.
   - **Hecho cuando:** la interfaz entrega la hora actual a la regla pura y guarda el cambio cuando un cultivo inicia o completa su espera, sin calcular crecimiento en React ni PixiJS.
 
-- [ ] 83. Mostrar en la escena el indicador circular verde derivado para cultivos regables y cosechables.
+- [x] 83. Mostrar en la escena el indicador circular verde derivado para cultivos regables y cosechables.
   - **RF:** RF-6, RF-7.
   - **Hecho cuando:** el indicador aparece sobre cultivos sin espera en etapas 1 a 3 y en etapa 4, y no aparece mientras `growthReadyAt` está pendiente.
 
-- [ ] 84. Realizar la verificación manual del ciclo riego, espera, crecimiento e indicador.
+- [x] 84. Realizar la verificación manual del ciclo riego, espera, crecimiento e indicador.
   - **RF:** RF-6, RF-7.
   - **Hecho cuando:** se confirma que regar no cambia la etapa al terminar la acción, que el cultivo crece tras un minuto real incluso después de reabrir el juego y que el indicador solo aparece al poder regar o cosechar.

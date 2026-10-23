@@ -3,7 +3,14 @@ import { Graphics } from "pixi.js";
 import { useCallback } from "react";
 import type { CharacterState, Coordinate, GameState } from "../game/model";
 import { selectAtPointerPosition, type SelectionPointerEvent } from "./FarmSceneSelection";
-import { characterVisuals, cropVisuals, tileVisuals } from "./FarmSceneVisuals";
+import {
+  characterVisuals,
+  cropIndicatorVisual,
+  cropVisuals,
+  getCropIndicatorPosition,
+  shouldShowCropIndicator,
+  tileVisuals,
+} from "./FarmSceneVisuals";
 import { drawTrees } from "./FarmSceneTrees";
 import { getCharacterVisualPosition } from "./movementInterpolation";
 
@@ -125,6 +132,14 @@ function drawScene(graphics: Graphics, game: GameState) {
 
     if (crop.stage === 4) {
       graphics.circle(centerX, groundY - visual.height, 8).fill(0xf2cf5b);
+    }
+
+    if (shouldShowCropIndicator(crop)) {
+      const indicatorPosition = getCropIndicatorPosition(crop.position);
+
+      graphics
+        .circle(indicatorPosition.x, indicatorPosition.y, cropIndicatorVisual.radius)
+        .fill(cropIndicatorVisual.color);
     }
   }
 

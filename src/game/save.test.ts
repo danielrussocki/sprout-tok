@@ -11,6 +11,60 @@ import {
 import { createNewGame } from "./world";
 
 describe("versioned game saves", () => {
+  it("serializes a version 2 save with a pending crop growth wait", () => {
+    const savedAt = 1_767_225_600_000;
+    const growthReadyAt = savedAt + wateringCooldownMs;
+    const game = {
+      ...createNewGame(() => 0),
+      crops: [
+        {
+          id: "crop-1",
+          position: { x: 1, y: 1 },
+          stage: 2 as const,
+          growthReadyAt,
+        },
+      ],
+    };
+
+    const saveData = createSaveData(game, savedAt);
+
+    expect(saveVersion).toBe(2);
+    expect(saveData).toMatchObject({
+      version: 2,
+      crops: [{ id: "crop-1", stage: 2, growthReadyAt }],
+    });
+    expect(parseSaveData(JSON.stringify(saveData))).toEqual(saveData);
+  });
+
+  it.each([
+    (saveData: ReturnType<typeof createSaveData>) => ({
+      ...saveData,
+      crops: saveData.crops.map((crop) => {
+        const cropWithoutGrowthWait = { ...crop };
+        delete cropWithoutGrowthWait.growthReadyAt;
+
+        return cropWithoutGrowthWait;
+      }),
+    }),
+    (saveData: ReturnType<typeof createSaveData>) => ({
+      ...saveData,
+      crops: saveData.crops.map((crop) => ({ ...crop, growthReadyAt: -1 })),
+    }),
+  ])("safely discards version 2 saves without valid crop growth waits", (createInvalidSave) => {
+    const savedAt = 1_767_225_600_000;
+    const serialized = JSON.stringify(
+      createInvalidSave(
+        createSaveData(
+          createNewGame(() => 0),
+          savedAt,
+        ),
+      ),
+    );
+
+    expect(parseSaveData(serialized)).toBeUndefined();
+    expect(restoreGame(serialized, savedAt, () => 0.99).message).toBe(resultMessages.invalidSave);
+  });
+
   it("serializes versioned persistent game data, including time markers", () => {
     const game = {
       ...createNewGame(() => 0),
@@ -40,6 +94,7 @@ describe("versioned game saves", () => {
           id: "crop-1",
           position: { x: 1, y: 1 },
           stage: 2 as const,
+          growthReadyAt: null,
           lastWateredAt: 1_767_225_540_000,
         },
       ],
@@ -93,6 +148,7 @@ describe("versioned game saves", () => {
           id: "crop-1",
           position: { x: 1, y: 1 },
           stage: 3 as const,
+          growthReadyAt: null,
           lastWateredAt: 1_767_225_540_000,
         },
       ],
@@ -173,6 +229,7 @@ describe("versioned game saves", () => {
           id: "crop-1",
           position: { x: 1, y: 1 },
           stage: 2 as const,
+          growthReadyAt: null,
           lastWateredAt: savedAt - 30_000,
         },
       ],
@@ -232,6 +289,7 @@ describe("versioned game saves", () => {
           id: "crop-1",
           position: { x: 1, y: 1 },
           stage: 2 as const,
+          growthReadyAt: null,
           lastWateredAt: now - wateringCooldownMs,
         },
       ],
@@ -249,6 +307,50 @@ describe("versioned game saves", () => {
     expect(restored.pendingTarget).toBeUndefined();
     expect(restored.activeAction).toBeUndefined();
     expect(canWaterCrop(restored.crops[0], now)).toBe(true);
+  });
+
+  it("preserves the remaining time of a pending crop growth wait when restoring", () => {
+    const savedAt = 1_767_225_600_000;
+    const growthReadyAt = savedAt + wateringCooldownMs;
+    const game = {
+      ...createNewGame(() => 0, savedAt),
+      crops: [
+        {
+          id: "crop-1",
+          position: { x: 1, y: 1 },
+          stage: 2 as const,
+          growthReadyAt,
+        },
+      ],
+    };
+
+    const restored = restoreGame(serializeGame(game, savedAt), growthReadyAt - 1);
+
+    expect(restored.crops).toEqual([
+      { id: "crop-1", position: { x: 1, y: 1 }, stage: 2, growthReadyAt },
+    ]);
+  });
+
+  it("grows a crop by one stage when its pending wait expires while the game is closed", () => {
+    const savedAt = 1_767_225_600_000;
+    const growthReadyAt = savedAt + wateringCooldownMs;
+    const game = {
+      ...createNewGame(() => 0, savedAt),
+      crops: [
+        {
+          id: "crop-1",
+          position: { x: 1, y: 1 },
+          stage: 2 as const,
+          growthReadyAt,
+        },
+      ],
+    };
+
+    const restored = restoreGame(serializeGame(game, savedAt), growthReadyAt + 1);
+
+    expect(restored.crops).toEqual([
+      { id: "crop-1", position: { x: 1, y: 1 }, stage: 3, growthReadyAt: null },
+    ]);
   });
 
   it("processes every elapsed tree generation interval when restoring", () => {
@@ -280,7 +382,7 @@ describe("versioned game saves", () => {
     expect(random).toHaveBeenCalledTimes(elapsedIntervals);
   });
 
-  it("keeps timers progressing while the game is closed", () => {
+  it("keeps the reduced-tree timer progressing while the game is closed", () => {
     const savedAt = 1_767_225_600_000;
     const game = {
       ...createNewGame(() => 0),
@@ -298,19 +400,16 @@ describe("versioned game saves", () => {
           id: "crop-1",
           position: { x: 1, y: 1 },
           stage: 2 as const,
+          growthReadyAt: null,
           lastWateredAt: savedAt,
         },
       ],
     };
     const serialized = serializeGame(game, savedAt);
 
-    const beforeCooldown = restoreGame(serialized, savedAt + wateringCooldownMs - 1);
-    const atCooldown = restoreGame(serialized, savedAt + wateringCooldownMs);
     const beforeTreeRemoval = restoreGame(serialized, savedAt + reducedTreeDurationMs - 1);
     const atTreeRemoval = restoreGame(serialized, savedAt + reducedTreeDurationMs);
 
-    expect(canWaterCrop(beforeCooldown.crops[0], savedAt + wateringCooldownMs - 1)).toBe(false);
-    expect(canWaterCrop(atCooldown.crops[0], savedAt + wateringCooldownMs)).toBe(true);
     expect(beforeTreeRemoval.trees).toHaveLength(1);
     expect(atTreeRemoval.trees).toEqual([expect.objectContaining({ status: "available" })]);
   });
@@ -321,8 +420,8 @@ describe("versioned game saves", () => {
     expect(restored.character.state).toBe("idle");
     expect(restored.message).toBe(resultMessages.invalidSave);
     expect(restored.crops).toEqual([
-      { id: "crop-1", position: { x: 1, y: 1 }, stage: 4 },
-      { id: "crop-2", position: { x: 2, y: 1 }, stage: 4 },
+      { id: "crop-1", position: { x: 1, y: 1 }, stage: 4, growthReadyAt: null },
+      { id: "crop-2", position: { x: 2, y: 1 }, stage: 4, growthReadyAt: null },
     ]);
   });
 
@@ -340,8 +439,8 @@ describe("versioned game saves", () => {
     expect(restored.character.state).toBe("idle");
     expect(restored.message).toBe(resultMessages.invalidSave);
     expect(restored.crops).toEqual([
-      { id: "crop-1", position: { x: 1, y: 1 }, stage: 4 },
-      { id: "crop-2", position: { x: 2, y: 1 }, stage: 4 },
+      { id: "crop-1", position: { x: 1, y: 1 }, stage: 4, growthReadyAt: null },
+      { id: "crop-2", position: { x: 2, y: 1 }, stage: 4, growthReadyAt: null },
     ]);
   });
 });

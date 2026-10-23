@@ -3,7 +3,7 @@
 ## Contexto y objetivo
 
 Crear una experiencia jugable mínima de granja que permita comprobar que el personaje, el mapa y las acciones básicas se entienden mediante interacción directa.
-El jugador debe desplazarse hacia un punto elegido y transformar el entorno al labrar, talar, regar, plantar y cosechar, con un crecimiento de cultivos que no pueda acelerarse con riegos consecutivos.
+El jugador debe desplazarse hacia un punto elegido y transformar el entorno al labrar, talar, regar, plantar y cosechar, con un crecimiento de cultivos que ocurra tras esperar el tiempo de recuperación de cada riego y no pueda acelerarse con riegos consecutivos.
 
 ## Usuarios
 
@@ -15,7 +15,8 @@ El jugador debe desplazarse hacia un punto elegido y transformar el entorno al l
 - Como jugador, quiero tocar o hacer clic en un lugar para llevar al personaje allí, para explorar la granja de forma directa.
 - Como jugador, quiero interactuar con tierra, árboles y plantas, para alterar la granja y comprobar las acciones disponibles.
 - Como jugador, quiero plantar, regar y cosechar cultivos, para experimentar un ciclo básico de producción.
-- Como jugador, quiero que los riegos repetidos no aceleren artificialmente un cultivo, para que el crecimiento tenga reglas comprensibles.
+- Como jugador, quiero que el cultivo crezca tras esperar después de regarlo y que los riegos repetidos no puedan acelerarlo, para que el crecimiento tenga reglas comprensibles.
+- Como jugador, quiero identificar visualmente cuándo puedo regar o cosechar un cultivo, para interactuar con él en el momento adecuado.
 - Como jugador, quiero que aparezcan árboles nuevos sin cerrar caminos del mapa ni invadir mis cultivos, para que la granja cambie sin impedir mis acciones.
 
 ## Requisitos funcionales
@@ -69,15 +70,17 @@ El sistema deberá permitir talar árboles para modificar el mapa.
 
 ### RF-6. Riego y crecimiento
 
-El sistema deberá permitir regar cultivos y hacerlos crecer bajo una limitación de tiempo por planta.
+El sistema deberá permitir regar cultivos y hacerlos crecer después de un tiempo de espera por planta.
 
-- **Criterio de aceptación:** Cuando el personaje actúe sobre un cultivo regable, el sistema deberá mostrar `watering` durante tres segundos y aplicar una única etapa visible de crecimiento al cultivo al finalizar la acción.
-- **Criterio de aceptación:** Cuando un cultivo haya recibido riego, el sistema deberá ignorar riegos adicionales sobre ese mismo cultivo durante un minuto real, incluso si el juego estuvo cerrado.
+- **Criterio de aceptación:** Cuando el personaje actúe sobre un cultivo regable, el sistema deberá mostrar `watering` durante tres segundos y, al finalizar la acción, iniciar un período de espera de un minuto real para ese cultivo, incluso si el juego se cierra.
+- **Criterio de aceptación:** Cuando transcurra el período de espera de un minuto real desde la finalización de un riego válido, el sistema deberá aplicar una única etapa visible de crecimiento al cultivo.
+- **Criterio de aceptación:** Mientras un cultivo esté en su período de espera, el sistema deberá ignorar riegos adicionales sobre ese cultivo.
 - **Criterio de aceptación:** Cuando el jugador intente regar un cultivo durante su enfriamiento, el crecimiento del cultivo no deberá cambiar.
-- **Criterio de aceptación:** Cuando un cultivo plantado complete tres riegos válidos, deberá alcanzar la etapa 4 y el sistema deberá marcarlo como cosechable.
-- **Criterio de aceptación:** Cuando un cultivo inicial complete los riegos válidos necesarios para avanzar desde su etapa inicial hasta la etapa 4, el sistema deberá marcarlo como cosechable.
+- **Criterio de aceptación:** Cuando un cultivo plantado complete los tres períodos de espera iniciados por riegos válidos, deberá alcanzar la etapa 4 y el sistema deberá marcarlo como cosechable.
+- **Criterio de aceptación:** Cuando un cultivo inicial complete los períodos de espera iniciados por los riegos válidos necesarios para avanzar desde su etapa inicial hasta la etapa 4, el sistema deberá marcarlo como cosechable.
 - **Criterio de aceptación:** Cuando un cultivo alcance la etapa 4, el sistema deberá ignorar intentos posteriores de regarlo.
-- **Criterio de aceptación:** El crecimiento de un cultivo deberá ocurrir únicamente al completarse un riego válido.
+- **Criterio de aceptación:** El crecimiento de un cultivo deberá ocurrir únicamente cuando finalice el período de espera iniciado por un riego válido.
+- **Criterio de aceptación:** Cuando un cultivo esté regable o cosechable, el sistema deberá mostrar un indicador circular verde sobre él; mientras esté en su período de espera, no deberá mostrar ese indicador.
 
 ### RF-7. Cosecha
 
@@ -115,7 +118,9 @@ El sistema deberá generar árboles vivos de forma aleatoria en el mapa, sin imp
 - Seleccionar fuera de los límites del mapa: el personaje deberá permanecer dentro de ellos.
 - Intentar iniciar una acción desde una parcela no adyacente o sin estar orientado al objetivo: el personaje deberá acercarse y orientarse antes de actuar.
 - Seleccionar un árbol reducido: el intento de tala deberá ignorarse.
-- Regar exactamente al cumplirse un minuto desde el último riego válido: el nuevo riego deberá ser válido.
+- Al cumplirse exactamente un minuto desde la finalización de un riego válido: el cultivo deberá avanzar una etapa y, si no alcanza la etapa 4, un nuevo riego deberá ser válido.
+- Cerrar el juego durante el período de espera de un cultivo: al volver, si ya transcurrió el minuto real, el cultivo deberá haber avanzado una etapa; si no, deberá conservar el tiempo restante y no mostrar el indicador de riego.
+- Alcanzar la etapa 4 al finalizar un período de espera: el cultivo deberá mostrar el indicador circular verde de cosecha y no deberá poder regarse.
 - Cerrar el juego durante una acción de tres segundos: al volver, la acción deberá estar cancelada, el objetivo sin cambios y el personaje en `idle`.
 - No existir una parcela transitable adyacente a un objetivo: la interacción deberá ignorarse y deberá mostrarse un mensaje al jugador.
 - Transcurrir cinco minutos cuando ya existan cinco árboles, incluidos árboles reducidos pendientes de desaparecer: no deberá generarse otro árbol.
@@ -133,10 +138,11 @@ El sistema deberá generar árboles vivos de forma aleatoria en el mapa, sin imp
 
 - El jugador puede mover al personaje con clic o toque dentro de un mapa delimitado.
 - El jugador puede labrar, plantar, talar, regar y cosechar mediante objetivos contextuales válidos.
-- La tala reduce árboles durante cinco minutos reales antes de eliminarlos, y el riego avanza una etapa del cultivo sin permitir avances repetidos durante un minuto real.
+- La tala reduce árboles durante cinco minutos reales antes de eliminarlos, y cada riego válido inicia un período de espera real de un minuto tras el cual el cultivo avanza una etapa.
 - El estado visible del personaje incluye `idle`, `walking`, `tilling dirt`, `chopping` y `watering`.
 - Los efectos de labrar, talar y regar ocurren solo al finalizar sus tres segundos de acción; una nueva orden los cancela sin efecto.
-- Los cultivos plantados pasan de la etapa 1 a la 4 con tres riegos válidos; los cultivos iniciales requieren los riegos restantes según su etapa inicial.
+- Los cultivos plantados pasan de la etapa 1 a la 4 tras completar tres períodos de espera iniciados por riegos válidos; los cultivos iniciales requieren los períodos restantes según su etapa inicial.
+- Los cultivos regables y cosechables muestran un indicador circular verde, que no aparece durante el período de espera posterior al riego.
 - Cosechar añade una unidad al inventario sin límite y plantar no consume inventario.
 - Cada cinco minutos se intenta generar un árbol vivo en una parcela de césped válida, sin superar cinco árboles vivos o reducidos ni bloquear el acceso al mapa o las tierras de cultivo.
 - Los casos límite definidos no alteran indebidamente el mapa ni el crecimiento de los cultivos.

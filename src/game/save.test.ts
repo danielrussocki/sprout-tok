@@ -11,11 +11,16 @@ import {
 import { createNewGame } from "./world";
 
 describe("versioned game saves", () => {
-  it("serializes and parses a version 3 save with a pending crop growth wait and logs", () => {
+  it("serializes and parses a version 4 save with stamina progress, a pending crop growth wait, and logs", () => {
     const savedAt = 1_767_225_600_000;
     const growthReadyAt = savedAt + wateringCooldownMs;
     const game = {
       ...createNewGame(() => 0),
+      stamina: {
+        value: 12,
+        recoveryProgressMs: 9_000,
+        runningProgressMs: 450,
+      },
       inventory: { crop: 2, log: 4 },
       crops: [
         {
@@ -29,9 +34,14 @@ describe("versioned game saves", () => {
 
     const saveData = createSaveData(game, savedAt);
 
-    expect(saveVersion).toBe(3);
+    expect(saveVersion).toBe(4);
     expect(saveData).toMatchObject({
-      version: 3,
+      version: 4,
+      stamina: {
+        value: 12,
+        recoveryProgressMs: 9_000,
+        runningProgressMs: 450,
+      },
       crops: [{ id: "crop-1", stage: 2, growthReadyAt }],
       inventory: { crop: 2, log: 4 },
     });
@@ -97,6 +107,62 @@ describe("versioned game saves", () => {
     expect(parseSaveData(serialized)).toBeUndefined();
     expect(restoreGame(serialized, savedAt, () => 0.99).message).toBe(resultMessages.invalidSave);
   });
+
+  it.each([
+    (saveData: ReturnType<typeof createSaveData>) => {
+      const { stamina: _, ...saveWithoutStamina } = saveData;
+
+      return saveWithoutStamina;
+    },
+    (saveData: ReturnType<typeof createSaveData>) => ({
+      ...saveData,
+      stamina: { ...saveData.stamina, value: 12.5 },
+    }),
+    (saveData: ReturnType<typeof createSaveData>) => ({
+      ...saveData,
+      stamina: { ...saveData.stamina, value: 37 },
+    }),
+    (saveData: ReturnType<typeof createSaveData>) => ({
+      ...saveData,
+      stamina: { ...saveData.stamina, recoveryProgressMs: 1.5 },
+    }),
+    (saveData: ReturnType<typeof createSaveData>) => ({
+      ...saveData,
+      stamina: { ...saveData.stamina, recoveryProgressMs: 30_000 },
+    }),
+    (saveData: ReturnType<typeof createSaveData>) => ({
+      ...saveData,
+      stamina: { ...saveData.stamina, runningProgressMs: -1 },
+    }),
+    (saveData: ReturnType<typeof createSaveData>) => ({
+      ...saveData,
+      stamina: { ...saveData.stamina, runningProgressMs: 1_000 },
+    }),
+    (saveData: ReturnType<typeof createSaveData>) => ({
+      ...saveData,
+      stamina: { value: 36, recoveryProgressMs: 1, runningProgressMs: 0 },
+    }),
+  ])(
+    "safely discards saves with missing, invalid, out-of-range, or incompatible stamina",
+    (createInvalidSave) => {
+      const savedAt = 1_767_225_600_000;
+      const serialized = JSON.stringify(
+        createInvalidSave(
+          createSaveData(
+            createNewGame(() => 0),
+            savedAt,
+          ),
+        ),
+      );
+      const restored = restoreGame(serialized, savedAt, () => 0.99);
+
+      expect(parseSaveData(serialized)).toBeUndefined();
+      expect(restored).toMatchObject({
+        stamina: { value: 36, recoveryProgressMs: 0, runningProgressMs: 0 },
+        message: resultMessages.invalidSave,
+      });
+    },
+  );
 
   it.each([
     (saveData: ReturnType<typeof createSaveData>) => ({
@@ -187,6 +253,7 @@ describe("versioned game saves", () => {
       lastTreeGenerationAttemptAt: game.lastTreeGenerationAttemptAt,
       map: game.map,
       character: game.character,
+      stamina: game.stamina,
       trees: game.trees,
       crops: game.crops,
       inventory: game.inventory,
@@ -318,6 +385,72 @@ describe("versioned game saves", () => {
     expect(restored.destination).toBeUndefined();
     expect(restored.pendingTarget).toBeUndefined();
     expect(restored.activeAction).toBeUndefined();
+  });
+
+  it("recovers stamina with the idle cadence while the game is closed", () => {
+    const savedAt = 1_767_225_600_000;
+    const game = {
+      ...createNewGame(() => 0, savedAt),
+      character: {
+        position: { x: 3, y: 2 },
+        facing: "south" as const,
+        state: "walking" as const,
+      },
+      stamina: {
+        value: 12,
+        recoveryProgressMs: 9_000,
+        runningProgressMs: 450,
+      },
+    };
+
+    const restored = restoreGame(serializeGame(game, savedAt), savedAt + 6_000);
+
+    expect(restored.character.state).toBe("idle");
+    expect(restored.stamina).toEqual({
+      value: 13,
+      recoveryProgressMs: 0,
+      runningProgressMs: 450,
+    });
+  });
+
+  it("discards remaining closed-time recovery progress on reaching maximum stamina", () => {
+    const savedAt = 1_767_225_600_000;
+    const game = {
+      ...createNewGame(() => 0, savedAt),
+      stamina: {
+        value: 35,
+        recoveryProgressMs: 14_000,
+        runningProgressMs: 450,
+      },
+    };
+
+    const restored = restoreGame(serializeGame(game, savedAt), savedAt + 31_000);
+
+    expect(restored.stamina).toEqual({
+      value: 36,
+      recoveryProgressMs: 0,
+      runningProgressMs: 450,
+    });
+  });
+
+  it("persists an active run as idle when restoring", () => {
+    const savedAt = 1_767_225_600_000;
+    const game = {
+      ...createNewGame(() => 0, savedAt),
+      character: {
+        position: { x: 3, y: 2 },
+        facing: "south" as const,
+        state: "running" as const,
+      },
+    };
+
+    const restored = restoreGame(serializeGame(game, savedAt), savedAt);
+
+    expect(restored.character).toMatchObject({
+      position: { x: 3, y: 2 },
+      facing: "south",
+      state: "idle",
+    });
   });
 
   it.each([

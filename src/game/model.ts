@@ -119,6 +119,7 @@ export interface GameState {
   crops: Crop[];
   inventory: Inventory;
   lastTreeGenerationAttemptAt: number;
+  lastStaminaAdvancedAt?: number;
   destination?: Coordinate;
   route?: Coordinate[];
   movement?: Movement;

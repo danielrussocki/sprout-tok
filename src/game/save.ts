@@ -7,13 +7,15 @@ import type {
   GameState,
   Inventory,
   Parcel,
+  Stamina,
   Tree,
 } from "./model";
 import { resultMessages, setResultMessage } from "./messages";
+import { maximumStamina, runningConsumptionIntervalMs, walkingRecoveryIntervalMs } from "./stamina";
 import { normalizeTime } from "./time";
 import { createNewGame } from "./world";
 
-export const saveVersion = 3;
+export const saveVersion = 4;
 export const saveStorageKey = `sprout-tok:save:v${saveVersion}`;
 
 export interface SaveData {
@@ -22,6 +24,7 @@ export interface SaveData {
   lastTreeGenerationAttemptAt: number;
   map: GameMap;
   character: Character;
+  stamina: Stamina;
   trees: Tree[];
   crops: Crop[];
   inventory: Inventory;
@@ -39,7 +42,9 @@ export function createSaveData(game: GameState, savedAt: number): SaveData {
     character: {
       ...game.character,
       position: { ...game.character.position },
+      state: game.character.state === "running" ? "idle" : game.character.state,
     },
+    stamina: { ...game.stamina! },
     trees: game.trees.map(copyTree),
     crops: game.crops.map(copyCrop),
     inventory: { ...game.inventory },
@@ -78,6 +83,7 @@ export function restoreGame(
       ...saveData,
       character: { ...saveData.character, state: "idle" },
       lastTreeGenerationAttemptAt: saveData.lastTreeGenerationAttemptAt,
+      lastStaminaAdvancedAt: saveData.savedAt,
     },
     now,
     random,
@@ -101,12 +107,14 @@ function parseSaveValue(value: unknown): SaveData | undefined {
   }
 
   const character = parseCharacter(value.character, map);
+  const stamina = parseStamina(value.stamina);
   const trees = parseTrees(value.trees, map);
   const crops = parseCrops(value.crops, map);
   const inventory = parseInventory(value.inventory);
 
   if (
     character === undefined ||
+    stamina === undefined ||
     trees === undefined ||
     crops === undefined ||
     inventory === undefined
@@ -120,9 +128,28 @@ function parseSaveValue(value: unknown): SaveData | undefined {
     lastTreeGenerationAttemptAt: value.lastTreeGenerationAttemptAt,
     map,
     character,
+    stamina,
     trees,
     crops,
     inventory,
+  };
+}
+
+function parseStamina(value: unknown): Stamina | undefined {
+  if (
+    !isRecord(value) ||
+    !isStaminaValue(value.value) ||
+    !isProgressInRange(value.recoveryProgressMs, walkingRecoveryIntervalMs) ||
+    !isProgressInRange(value.runningProgressMs, runningConsumptionIntervalMs) ||
+    (value.value === maximumStamina && value.recoveryProgressMs !== 0)
+  ) {
+    return undefined;
+  }
+
+  return {
+    value: value.value,
+    recoveryProgressMs: value.recoveryProgressMs,
+    runningProgressMs: value.runningProgressMs,
   };
 }
 
@@ -332,6 +359,14 @@ function isPositiveInteger(value: unknown): value is number {
 
 function isNonNegativeInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+}
+
+function isStaminaValue(value: unknown): value is number {
+  return isNonNegativeInteger(value) && value <= maximumStamina;
+}
+
+function isProgressInRange(value: unknown, upperLimit: number): value is number {
+  return isNonNegativeInteger(value) && value < upperLimit;
 }
 
 function positionKey(position: Coordinate): string {

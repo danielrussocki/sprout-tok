@@ -1,4 +1,5 @@
 import type { GameState } from "../game/model";
+import { maximumStamina } from "../game/stamina";
 import { normalizeTime } from "../game/time";
 
 interface TimePulseOptions {
@@ -17,6 +18,18 @@ const browserTimePulseOptions: TimePulseOptions = {
 
 export function advanceTimePulse(game: GameState, now: number, random: () => number): GameState {
   return normalizeTime(game, now, random);
+}
+
+export function shouldRequestTimePulse(game: GameState): boolean {
+  if (game.movement !== undefined) {
+    return true;
+  }
+
+  return (
+    game.stamina !== undefined &&
+    game.stamina.value < maximumStamina &&
+    (game.character.state === "idle" || game.character.state === "walking")
+  );
 }
 
 export function startTimePulse(

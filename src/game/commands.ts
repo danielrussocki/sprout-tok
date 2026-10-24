@@ -252,15 +252,16 @@ export function advanceMovement(
   actionId = `action-${now}`,
 ): GameState {
   const movedGame = advanceMovementUntil(game, now);
-  const target = movedGame.pendingTarget;
+  const normalizedGame = normalizeTime(movedGame, now);
+  const target = normalizedGame.pendingTarget;
 
-  if (target === undefined || movedGame.destination !== undefined) {
-    return movedGame;
+  if (target === undefined || normalizedGame.destination !== undefined) {
+    return normalizedGame;
   }
 
-  return isInteractionTargetAvailable(movedGame, target, now)
-    ? beginInteraction(movedGame, target, now, actionId)
-    : setIdle(movedGame);
+  return isInteractionTargetAvailable(normalizedGame, target, now)
+    ? beginInteraction(normalizedGame, target, now, actionId)
+    : setIdle(normalizedGame);
 }
 
 export function arriveForInteraction(

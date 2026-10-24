@@ -1,11 +1,19 @@
 import { describe, expect, it } from "vitest";
+import { selectPosition } from "../game/commands";
 import type { Crop, Tree } from "../game/model";
+import { createNewGame } from "../game/world";
 import { drawTrees } from "./FarmSceneTrees";
-import { createSelectionHandler } from "./FarmSceneSelection";
+import {
+  clearPointerVisualState,
+  createPointerVisualState,
+  getCanvasCursor,
+  createSelectionHandler,
+} from "./FarmSceneSelection";
 import {
   characterVisuals,
   cropVisuals,
   getCropIndicatorPosition,
+  getStaminaLabel,
   shouldShowCropIndicator,
   tileVisuals,
   treeVisuals,
@@ -42,6 +50,12 @@ function createRecordingGraphics() {
 }
 
 describe("FarmScene visual vocabulary", () => {
+  it("derives the canvas stamina label from the current state value", () => {
+    expect(getStaminaLabel(36)).toBe("Energía: 36");
+    expect(getStaminaLabel(12)).toBe("Energía: 12");
+    expect(getStaminaLabel(13)).toBe("Energía: 13");
+  });
+
   it("distinguishes grass, untilled soil, and tilled soil", () => {
     expect(tileVisuals.grass.color).not.toBe(tileVisuals.soil.color);
     expect(tileVisuals.soil.color).not.toBe(tileVisuals.tilledSoil.color);
@@ -114,6 +128,60 @@ describe("FarmScene selection", () => {
     ]);
   });
 
+  it("keeps hover feedback local and sends equivalent running selections for mouse and touch", () => {
+    const map = { width: 8, height: 6 };
+    const initialGame = createNewGame(() => 0, 0);
+    let mouseGame = initialGame;
+    let touchGame = initialGame;
+    const mouseSelect = createSelectionHandler(map, (position) => {
+      mouseGame = selectPosition(mouseGame, position, 1_000);
+    });
+    const touchSelect = createSelectionHandler(map, (position) => {
+      touchGame = selectPosition(touchGame, position, 1_000);
+    });
+
+    expect(
+      createPointerVisualState(map, { global: { x: 160, y: 16 }, pointerType: "mouse" }),
+    ).toEqual({
+      position: { x: 160, y: 16 },
+      hoveredTile: { x: 2, y: 0 },
+    });
+    expect(mouseGame).toEqual(initialGame);
+
+    mouseSelect({ global: { x: 160, y: 16 }, pointerType: "mouse" });
+    mouseSelect({ global: { x: 160, y: 16 }, pointerType: "mouse" });
+    touchSelect({ global: { x: 160, y: 16 }, pointerType: "touch" });
+    touchSelect({ global: { x: 160, y: 16 }, pointerType: "touch" });
+
+    expect(mouseGame).toEqual(touchGame);
+    expect(mouseGame.character.state).toBe("running");
+  });
+
+  it("sends equivalent redirection selections for mouse and touch", () => {
+    const map = { width: 8, height: 6 };
+    const initialGame = createNewGame(() => 0, 0);
+    let mouseGame = initialGame;
+    let touchGame = initialGame;
+    const mouseSelect = createSelectionHandler(map, (position) => {
+      mouseGame = selectPosition(mouseGame, position, 1_000);
+    });
+    const touchSelect = createSelectionHandler(map, (position) => {
+      touchGame = selectPosition(touchGame, position, 1_000);
+    });
+
+    mouseSelect({ global: { x: 160, y: 16 }, pointerType: "mouse" });
+    mouseSelect({ global: { x: 16, y: 160 }, pointerType: "mouse" });
+    touchSelect({ global: { x: 160, y: 16 }, pointerType: "touch" });
+    touchSelect({ global: { x: 16, y: 160 }, pointerType: "touch" });
+
+    expect(mouseGame).toEqual(touchGame);
+    expect(mouseGame.character.state).toBe("walking");
+    expect(mouseGame.activeReference).toEqual({
+      kind: "destination",
+      position: { x: 0, y: 2 },
+    });
+  });
+
   it("does not send a selection outside the map", () => {
     const selections: { x: number; y: number }[] = [];
     const onSelect = (position: { x: number; y: number }) => selections.push(position);
@@ -122,6 +190,58 @@ describe("FarmScene selection", () => {
     select({ global: { x: 15, y: 16 }, pointerType: "mouse" });
 
     expect(selections).toEqual([]);
+  });
+
+  it("derives local pointer position and the hovered tile for mouse and pen input", () => {
+    const map = { width: 8, height: 6 };
+
+    expect(
+      createPointerVisualState(map, { global: { x: 160, y: 232 }, pointerType: "mouse" }),
+    ).toEqual({
+      position: { x: 160, y: 232 },
+      hoveredTile: { x: 2, y: 3 },
+    });
+    expect(createPointerVisualState(map, { global: { x: 15, y: 16 }, pointerType: "pen" })).toEqual(
+      {
+        position: { x: 15, y: 16 },
+        hoveredTile: undefined,
+      },
+    );
+  });
+
+  it("does not create pointer visual state for touch input", () => {
+    expect(
+      createPointerVisualState(
+        { width: 8, height: 6 },
+        { global: { x: 160, y: 232 }, pointerType: "touch" },
+      ),
+    ).toBeUndefined();
+  });
+
+  it("clears pointer feedback on touch input and canvas exit", () => {
+    const visualState = createPointerVisualState(
+      { width: 8, height: 6 },
+      { global: { x: 160, y: 232 }, pointerType: "mouse" },
+    );
+
+    expect(visualState).toBeDefined();
+    expect(
+      createPointerVisualState(
+        { width: 8, height: 6 },
+        { global: { x: 160, y: 232 }, pointerType: "touch" },
+      ),
+    ).toBeUndefined();
+    expect(clearPointerVisualState()).toBeUndefined();
+  });
+
+  it("uses the usual cursor when custom pointer feedback is hidden", () => {
+    const visualState = createPointerVisualState(
+      { width: 8, height: 6 },
+      { global: { x: 160, y: 232 }, pointerType: "pen" },
+    );
+
+    expect(getCanvasCursor(visualState)).toBe("none");
+    expect(getCanvasCursor(undefined)).toBe("auto");
   });
 });
 

@@ -100,6 +100,7 @@ export function createNewGame(
     ],
     inventory: { crop: 0, log: 0 },
     lastTreeGenerationAttemptAt: now,
+    lastStaminaAdvancedAt: now,
   };
 }
 

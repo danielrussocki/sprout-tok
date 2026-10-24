@@ -84,66 +84,66 @@
   - **RF:** RF-6.
   - **Hecho cuando:** una acción activa no recupera stamina y, al terminar o cancelarse, el progreso previo queda disponible al volver a un estado recuperable.
 
-- [ ] 22. Probar objetivo invalidado en carrera y pausa de recuperación en acciones contextuales.
+- [x] 22. Probar objetivo invalidado en carrera y pausa de recuperación en acciones contextuales.
   - **RF:** RF-2, RF-4, RF-6.
   - **Hecho cuando:** las pruebas confirman llegada sin acción al invalidarse el objetivo y ausencia de recuperación durante una acción.
 
-- [ ] 23. Integrar la normalización de stamina en los pulsos de tiempo y movimiento con prioridad temporal correcta.
+- [x] 23. Integrar la normalización de stamina en los pulsos de tiempo y movimiento con prioridad temporal correcta.
   - **RF:** RF-4, RF-5, RF-6.
   - **Hecho cuando:** antes de procesar una selección o transición en una hora dada se avanza la stamina hasta esa hora y se aplica primero la recuperación que vence exactamente en ella.
 
-- [ ] 24. Probar pulsos grandes y la coincidencia entre recuperación y solicitud de carrera.
+- [x] 24. Probar pulsos grandes y la coincidencia entre recuperación y solicitud de carrera.
   - **RF:** RF-4, RF-5, RF-6.
   - **Hecho cuando:** las pruebas confirman que una recuperación de 12 a 13 permite correr en esa misma hora y que varios hitos no pierden ni adelantan distancia o stamina.
 
-- [ ] 25. Actualizar el esquema de guardado local a la versión 4 con stamina y ambos progresos parciales.
+- [x] 25. Actualizar el esquema de guardado local a la versión 4 con stamina y ambos progresos parciales.
   - **RF:** RF-3, RF-5, RF-6, RF-7.
   - **Hecho cuando:** un guardado válido serializa stamina, progreso de recuperación y fracción de carrera junto con los datos existentes.
 
-- [ ] 26. Implementar la validación segura de los campos nuevos de stamina al cargar un guardado.
+- [x] 26. Implementar la validación segura de los campos nuevos de stamina al cargar un guardado.
   - **RF:** RF-3, RF-7.
   - **Hecho cuando:** un valor ausente, no entero, fuera de rango o incompatible descarta el guardado e inicia una partida nueva con mensaje en español.
 
-- [ ] 27. Implementar la restauración de stamina con cadencia `idle` durante el tiempo cerrado.
+- [x] 27. Implementar la restauración de stamina con cadencia `idle` durante el tiempo cerrado.
   - **RF:** RF-6, RF-7.
   - **Hecho cuando:** al restaurar se conserva el progreso parcial, se aplica el tiempo cerrado a intervalos de 15 segundos, se respeta el máximo y el personaje queda `idle` sin restaurar `running`.
 
-- [ ] 28. Probar guardado, validación y restauración de stamina.
+- [x] 28. Probar guardado, validación y restauración de stamina.
   - **RF:** RF-3, RF-5, RF-6, RF-7.
   - **Hecho cuando:** las pruebas cubren versión 4 válida, fracción de carrera persistente, recuperación cerrada, máximo, estado restaurado `idle` y datos inválidos.
 
-- [ ] 29. Enviar pulsos de tiempo desde la pantalla de juego mientras exista movimiento o stamina recuperable.
+- [x] 29. Enviar pulsos de tiempo desde la pantalla de juego mientras exista movimiento o stamina recuperable.
   - **RF:** RF-3, RF-5, RF-6.
   - **Hecho cuando:** la interfaz entrega únicamente la hora actual a las reglas y persiste cada cambio resultante sin calcular stamina ni rutas por cuenta propia.
 
-- [ ] 30. Derivar y renderizar marcadores para cada tile pendiente de la ruta activa.
+- [x] 30. Derivar y renderizar marcadores para cada tile pendiente de la ruta activa.
   - **RF:** RF-2.
   - **Hecho cuando:** los marcadores aparecen en todos los tiles pendientes y desaparecen al alcanzarlos, redirigir, iniciar una acción, cancelar o llegar.
 
-- [ ] 31. Mostrar la stamina actual en la parte superior del canvas.
+- [x] 31. Mostrar la stamina actual en la parte superior del canvas.
   - **RF:** RF-3.
   - **Hecho cuando:** el canvas presenta el valor del estado de stamina y lo actualiza tras consumo, recuperación o restauración.
 
-- [ ] 32. Implementar el estado visual local de puntero de ratón o lápiz y la detección de tile bajo hover.
+- [x] 32. Implementar el estado visual local de puntero de ratón o lápiz y la detección de tile bajo hover.
   - **RF:** RF-1.
   - **Hecho cuando:** la posición del puntero y el tile bajo hover se actualizan sin enviar intenciones ni alterar el estado de juego.
 
-- [ ] 33. Renderizar el puntero personalizado y el marco de hover dentro del canvas.
+- [x] 33. Renderizar el puntero personalizado y el marco de hover dentro del canvas.
   - **RF:** RF-1.
   - **Hecho cuando:** el cursor habitual se reemplaza dentro del canvas para ratón o lápiz, el marco sigue solo tiles del mapa y el puntero permanece sin marco fuera del mapa.
 
-- [ ] 34. Gestionar salida del canvas e interacción exclusiva por toque para el feedback de puntero.
+- [x] 34. Gestionar salida del canvas e interacción exclusiva por toque para el feedback de puntero.
   - **RF:** RF-1.
   - **Hecho cuando:** al salir se ocultan puntero y marco y vuelve el cursor habitual; con toque no aparece ninguno de los dos.
 
-- [ ] 35. Conectar clic y toque de la escena con la referencia enviada a las reglas sin alterar el feedback de hover.
+- [x] 35. Conectar clic y toque de la escena con la referencia enviada a las reglas sin alterar el feedback de hover.
   - **RF:** RF-1, RF-2, RF-4.
   - **Hecho cuando:** clic y toque equivalentes producen la misma selección, redirección o carrera, y el movimiento del puntero por sí solo no modifica mapa, ruta, acciones ni stamina.
 
-- [ ] 36. Realizar la verificación manual de todos los feedbacks visuales y flujos de movilidad.
+- [x] 36. Realizar la verificación manual de todos los feedbacks visuales y flujos de movilidad.
   - **RF:** RF-1 a RF-7.
   - **Hecho cuando:** se confirma manualmente puntero, hover, toque, marcadores, stamina visible, caminar, correr, agotamiento, recuperación, redirección, restauración y ausencia de teletransporte.
 
-- [ ] 37. Ejecutar las pruebas unitarias, lint, comprobación de formato y compilación final.
+- [x] 37. Ejecutar las pruebas unitarias, lint, comprobación de formato y compilación final.
   - **RF:** RF-1 a RF-7.
   - **Hecho cuando:** las pruebas, `pnpm lint`, `pnpm fmt:check` y `pnpm build` finalizan sin fallos no resueltos.

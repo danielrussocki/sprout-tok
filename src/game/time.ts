@@ -1,4 +1,5 @@
 import type { Crop, CropStage, GameState } from "./model";
+import { maximumStamina, recoverStamina } from "./stamina";
 import { generateTree } from "./world";
 
 export const reducedTreeDurationMs = 5 * 60 * 1_000;
@@ -14,7 +15,8 @@ export function normalizeTime(
   now: number,
   random: () => number = Math.random,
 ): GameState {
-  const crops = game.crops.map((crop) => {
+  const staminaNormalizedGame = normalizeStaminaTime(game, now);
+  const crops = staminaNormalizedGame.crops.map((crop) => {
     if (crop.growthReadyAt == null || crop.growthReadyAt > now || crop.stage === 4) {
       return crop;
     }
@@ -25,14 +27,18 @@ export function normalizeTime(
       growthReadyAt: null,
     };
   });
-  const hasGrownCrop = crops.some((crop, index) => crop !== game.crops[index]);
-  const trees = game.trees.filter(
+  const hasGrownCrop = crops.some((crop, index) => crop !== staminaNormalizedGame.crops[index]);
+  const trees = staminaNormalizedGame.trees.filter(
     (tree) => tree.status !== "reduced" || now < tree.reducedAt + reducedTreeDurationMs,
   );
   let normalizedGame =
-    hasGrownCrop || trees.length !== game.trees.length
-      ? { ...game, crops: hasGrownCrop ? crops : game.crops, trees }
-      : game;
+    hasGrownCrop || trees.length !== staminaNormalizedGame.trees.length
+      ? {
+          ...staminaNormalizedGame,
+          crops: hasGrownCrop ? crops : staminaNormalizedGame.crops,
+          trees,
+        }
+      : staminaNormalizedGame;
 
   while (now >= normalizedGame.lastTreeGenerationAttemptAt + treeGenerationIntervalMs) {
     const attemptedAt = normalizedGame.lastTreeGenerationAttemptAt + treeGenerationIntervalMs;
@@ -45,4 +51,25 @@ export function normalizeTime(
   }
 
   return normalizedGame;
+}
+
+function normalizeStaminaTime(game: GameState, now: number): GameState {
+  const stamina = game.stamina;
+  const lastStaminaAdvancedAt = game.lastStaminaAdvancedAt ?? now;
+
+  if (stamina?.value === maximumStamina && stamina.recoveryProgressMs === 0) {
+    return game;
+  }
+
+  if (stamina === undefined || now <= lastStaminaAdvancedAt) {
+    return game.lastStaminaAdvancedAt === lastStaminaAdvancedAt
+      ? game
+      : { ...game, lastStaminaAdvancedAt };
+  }
+
+  return {
+    ...game,
+    stamina: recoverStamina(stamina, now - lastStaminaAdvancedAt, game.character.state),
+    lastStaminaAdvancedAt: now,
+  };
 }

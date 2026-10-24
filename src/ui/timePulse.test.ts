@@ -3,9 +3,42 @@ import { describe, expect, it } from "vitest";
 import { completeAction, startAction } from "../game/actions";
 import { serializeGame } from "../game/save";
 import { createNewGame } from "../game/world";
-import { advanceTimePulse, startTimePulse } from "./timePulse";
+import { advanceTimePulse, shouldRequestTimePulse, startTimePulse } from "./timePulse";
 
 describe("time pulse", () => {
+  it("requests pulses only while movement exists or stamina can recover", () => {
+    const game = createNewGame(() => 0, 0);
+    const recoveringGame = {
+      ...game,
+      stamina: { ...game.stamina!, value: 35 },
+    };
+    const movingGame = {
+      ...game,
+      character: { ...game.character, state: "walking" as const },
+      movement: {
+        continuousPosition: { x: 0, y: 0 },
+        activeSegment: { start: { x: 0, y: 0 }, end: { x: 1, y: 0 } },
+        remainingRoute: [],
+        lastAdvancedAt: 0,
+      },
+    };
+    const actingGame = {
+      ...recoveringGame,
+      character: { ...recoveringGame.character, state: "watering" as const },
+      activeAction: {
+        id: "watering-1",
+        kind: "watering" as const,
+        target: { x: 1, y: 1 },
+        completesAt: 3_000,
+      },
+    };
+
+    expect(shouldRequestTimePulse(game)).toBe(false);
+    expect(shouldRequestTimePulse(recoveringGame)).toBe(true);
+    expect(shouldRequestTimePulse(movingGame)).toBe(true);
+    expect(shouldRequestTimePulse(actingGame)).toBe(false);
+  });
+
   it("delegates pending crop growth to the pure time rule and preserves the result for saving", () => {
     const target = { x: 1, y: 1 };
     const game = {

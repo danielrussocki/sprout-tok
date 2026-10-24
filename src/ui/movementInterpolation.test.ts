@@ -24,6 +24,15 @@ describe("character movement interpolation", () => {
     expect(getCharacterVisualPosition(walkingGame)).toEqual({ x: 0.5, y: 0 });
   });
 
+  it("renders the continuous position while running", () => {
+    const runningGame: GameState = {
+      ...walkingGame,
+      character: { ...walkingGame.character, state: "running" },
+    };
+
+    expect(getCharacterVisualPosition(runningGame)).toEqual({ x: 0.5, y: 0 });
+  });
+
   it("keeps the character at its logical position when it is not walking", () => {
     const idleGame: GameState = {
       ...walkingGame,

@@ -6,9 +6,8 @@ import type { Coordinate } from "../game/model";
 import { restoreGame, saveStorageKey, serializeGame } from "../game/save";
 import { FarmScene } from "./FarmScene";
 import { farmSceneSize } from "./FarmSceneVisuals";
-import { startMovementPulse } from "./movementPulse";
 import { StatusPanel } from "./StatusPanel";
-import { advanceTimePulse, startTimePulse } from "./timePulse";
+import { advanceTimePulse, shouldRequestTimePulse, startTimePulse } from "./timePulse";
 
 function loadGame() {
   return restoreGame(localStorage.getItem(saveStorageKey), Date.now(), Math.random);
@@ -17,35 +16,32 @@ function loadGame() {
 export function GameScreen() {
   const [game, setGame] = useState(loadGame);
   const actionSequence = useRef(0);
+  const requestsTimePulse = shouldRequestTimePulse(game);
 
   useEffect(() => {
     localStorage.setItem(saveStorageKey, serializeGame(game, Date.now()));
   }, [game]);
 
-  useEffect(
-    () =>
-      startTimePulse((now, random) => {
-        setGame((currentGame) => advanceTimePulse(currentGame, now, random));
-      }),
-    [],
-  );
-
   useEffect(() => {
-    if (game.character.state !== "walking") {
+    if (!requestsTimePulse) {
       return;
     }
 
-    return startMovementPulse((now) => {
+    return startTimePulse((now, random) => {
       setGame((currentGame) => {
-        if (currentGame.character.state !== "walking") {
+        if (!shouldRequestTimePulse(currentGame)) {
           return currentGame;
+        }
+
+        if (currentGame.movement === undefined) {
+          return advanceTimePulse(currentGame, now, random);
         }
 
         actionSequence.current += 1;
         return advanceMovement(currentGame, now, `action-${actionSequence.current}`);
       });
     });
-  }, [game.character.state]);
+  }, [requestsTimePulse]);
 
   useEffect(() => {
     if (game.activeAction === undefined) {

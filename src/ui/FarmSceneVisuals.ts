@@ -33,6 +33,28 @@ export const cropIndicatorVisual = {
   topOffset: 14,
 } as const;
 
+export const routeMarkerVisual = {
+  color: 0xffdc5e,
+  radius: 14,
+  width: 3,
+} as const;
+
+export const staminaVisual = {
+  x: mapPadding + 8,
+  y: mapPadding + 6,
+  style: {
+    fill: 0xffffff,
+    fontFamily: "Arial",
+    fontSize: 18,
+    fontWeight: "bold",
+    stroke: { color: 0x1d3a28, width: 3 },
+  },
+} as const;
+
+export function getStaminaLabel(value: number): string {
+  return `Energía: ${value}`;
+}
+
 export function getCropIndicatorPosition(position: Coordinate) {
   return {
     x: mapPadding + position.x * cellSize + cellSize / 2,

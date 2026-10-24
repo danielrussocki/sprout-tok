@@ -1,20 +1,31 @@
 import { extend } from "@pixi/react";
-import { Graphics } from "pixi.js";
-import { useCallback } from "react";
+import { Graphics, Text } from "pixi.js";
+import { useCallback, useState } from "react";
 import type { CharacterState, Coordinate, GameState } from "../game/model";
-import { selectAtPointerPosition, type SelectionPointerEvent } from "./FarmSceneSelection";
+import {
+  clearPointerVisualState,
+  createPointerVisualState,
+  createSelectionHandler,
+  getCanvasCursor,
+  type PointerVisualState,
+  type SelectionPointerEvent,
+} from "./FarmSceneSelection";
 import {
   characterVisuals,
   cropIndicatorVisual,
   cropVisuals,
   getCropIndicatorPosition,
+  getStaminaLabel,
+  routeMarkerVisual,
   shouldShowCropIndicator,
+  staminaVisual,
   tileVisuals,
 } from "./FarmSceneVisuals";
 import { drawTrees } from "./FarmSceneTrees";
 import { getCharacterVisualPosition } from "./movementInterpolation";
+import { getPendingRouteMarkers } from "./routeMarkers";
 
-extend({ Graphics });
+extend({ Graphics, Text });
 
 const cellSize = 72;
 const mapPadding = 16;
@@ -78,7 +89,11 @@ function drawCharacterMarker(
   }
 }
 
-function drawScene(graphics: Graphics, game: GameState) {
+function drawScene(
+  graphics: Graphics,
+  game: GameState,
+  pointerVisualState: PointerVisualState | undefined,
+) {
   graphics.clear();
 
   for (const tile of game.map.tiles) {
@@ -106,6 +121,14 @@ function drawScene(graphics: Graphics, game: GameState) {
           });
       }
     }
+  }
+
+  for (const marker of getPendingRouteMarkers(game)) {
+    const position = getCellPosition(marker.x, marker.y);
+
+    graphics
+      .circle(position.x + cellSize / 2, position.y + cellSize / 2, routeMarkerVisual.radius)
+      .stroke({ color: routeMarkerVisual.color, width: routeMarkerVisual.width });
   }
 
   drawTrees(graphics, game.trees, getCellPosition);
@@ -154,6 +177,34 @@ function drawScene(graphics: Graphics, game: GameState) {
     .fill(characterVisual.color)
     .stroke({ color: 0xffffff, width: 2 });
   drawCharacterMarker(graphics, game.character.state, centerX, centerY);
+
+  if (pointerVisualState?.hoveredTile !== undefined) {
+    const position = getCellPosition(
+      pointerVisualState.hoveredTile.x,
+      pointerVisualState.hoveredTile.y,
+    );
+
+    graphics.rect(position.x, position.y, cellSize, cellSize).stroke({
+      color: 0xd9f6ff,
+      width: 3,
+    });
+  }
+
+  if (pointerVisualState !== undefined) {
+    const { x, y } = pointerVisualState.position;
+
+    graphics
+      .moveTo(x, y)
+      .lineTo(x, y + 22)
+      .lineTo(x + 6, y + 16)
+      .lineTo(x + 12, y + 24)
+      .lineTo(x + 16, y + 20)
+      .lineTo(x + 10, y + 12)
+      .lineTo(x + 18, y + 12)
+      .closePath()
+      .fill(0x1d3a28)
+      .stroke({ color: 0xffffff, width: 2 });
+  }
 }
 
 interface FarmSceneProps {
@@ -162,15 +213,49 @@ interface FarmSceneProps {
 }
 
 export function FarmScene({ game, onSelect }: FarmSceneProps) {
-  const draw = useCallback((graphics: Graphics) => drawScene(graphics, game), [game]);
+  const staminaLabel = game.stamina === undefined ? undefined : getStaminaLabel(game.stamina.value);
+  const [pointerVisualState, setPointerVisualState] = useState<PointerVisualState>();
+  const draw = useCallback(
+    (graphics: Graphics) => drawScene(graphics, game, pointerVisualState),
+    [game, pointerVisualState],
+  );
   const select = useCallback(
     (event: SelectionPointerEvent) => {
       if (onSelect !== undefined) {
-        selectAtPointerPosition(game.map, event, onSelect);
+        createSelectionHandler(game.map, onSelect)(event);
       }
     },
     [game.map, onSelect],
   );
+  const updatePointerVisualState = useCallback(
+    (event: SelectionPointerEvent) => {
+      setPointerVisualState(createPointerVisualState(game.map, event));
+    },
+    [game.map],
+  );
+  const clearPointerFeedback = useCallback(() => {
+    setPointerVisualState(clearPointerVisualState());
+  }, []);
 
-  return <pixiGraphics cursor="pointer" draw={draw} eventMode="static" onPointerTap={select} />;
+  return (
+    <>
+      <pixiGraphics
+        cursor={getCanvasCursor(pointerVisualState)}
+        draw={draw}
+        eventMode="static"
+        onPointerEnter={updatePointerVisualState}
+        onPointerLeave={clearPointerFeedback}
+        onPointerMove={updatePointerVisualState}
+        onPointerTap={select}
+      />
+      {staminaLabel === undefined ? null : (
+        <pixiText
+          text={staminaLabel}
+          x={staminaVisual.x}
+          y={staminaVisual.y}
+          style={staminaVisual.style}
+        />
+      )}
+    </>
+  );
 }

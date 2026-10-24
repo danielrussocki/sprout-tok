@@ -295,6 +295,31 @@ describe("game commands", () => {
     expect(updatedGame.message).toBeUndefined();
   });
 
+  it("completes a running route without starting an action when its target is removed", () => {
+    const walkingGame = selectPosition(
+      createNewGame(() => 0),
+      { x: 4, y: 1 },
+      1_000,
+    );
+    const runningGame = selectPosition(walkingGame, { x: 4, y: 1 }, 1_000);
+    const gameWithRemovedTarget = {
+      ...runningGame,
+      trees: runningGame.trees.filter((tree) => tree.id !== "tree-1"),
+    };
+
+    const updatedGame = advanceMovement(gameWithRemovedTarget, 1_700, "chop-tree");
+
+    expect(updatedGame.character).toEqual({
+      position: { x: 4, y: 0 },
+      facing: "south",
+      state: "idle",
+    });
+    expect(updatedGame.destination).toBeUndefined();
+    expect(updatedGame.activeReference).toBeUndefined();
+    expect(updatedGame.pendingTarget).toBeUndefined();
+    expect(updatedGame.activeAction).toBeUndefined();
+  });
+
   it("accepts cultivable soil through the contextual tilling flow", () => {
     const game = createNewGame(() => 0);
     const target = { x: 1, y: 2 };

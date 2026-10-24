@@ -1,6 +1,6 @@
 import type { Coordinate, Direction, GameState, InteractionTarget } from "./model";
 import { getWalkableRoute } from "./navigation";
-import { consumeRunningStamina, runningConsumptionIntervalMs } from "./stamina";
+import { consumeRunningStamina, recoverStamina, runningConsumptionIntervalMs } from "./stamina";
 
 export const movementDurationPerTileMs = 350;
 export const runningSpeedMultiplier = 2;
@@ -122,10 +122,26 @@ export function advanceMovementUntil(game: GameState, now: number): GameState {
       updatedGame = {
         ...updatedGame,
         stamina,
+        lastStaminaAdvancedAt: Math.max(updatedGame.lastStaminaAdvancedAt ?? 0, advancedAt),
         character:
           stamina.value < 13
             ? { ...updatedGame.character, state: "walking" }
             : updatedGame.character,
+      };
+    } else if (characterState === "walking" && updatedGame.stamina !== undefined) {
+      const staminaRecoveryStartedAt = Math.max(
+        updatedGame.lastStaminaAdvancedAt ?? movement.lastAdvancedAt,
+        movement.lastAdvancedAt,
+      );
+
+      updatedGame = {
+        ...updatedGame,
+        stamina: recoverStamina(
+          updatedGame.stamina,
+          Math.max(0, advancedAt - staminaRecoveryStartedAt),
+          "walking",
+        ),
+        lastStaminaAdvancedAt: Math.max(updatedGame.lastStaminaAdvancedAt ?? 0, advancedAt),
       };
     }
 

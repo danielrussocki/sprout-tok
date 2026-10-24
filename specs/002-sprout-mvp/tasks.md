@@ -40,47 +40,47 @@
   - **RF:** RF-5, RF-7.
   - **Hecho cuando:** una carrera interrumpida conserva su fracción y una carrera posterior la usa para completar el siguiente segundo de consumo.
 
-- [ ] 11. Probar consumo por carrera, fracciones acumuladas y límites de stamina.
+- [x] 11. Probar consumo por carrera, fracciones acumuladas y límites de stamina.
   - **RF:** RF-3, RF-5.
   - **Hecho cuando:** las pruebas cubren segundos completos, llegada antes del siguiente segundo, acumulación entre carreras y el límite en cero.
 
-- [ ] 12. Extender el avance continuo de movimiento para usar la velocidad doble en `running`.
+- [x] 12. Extender el avance continuo de movimiento para usar la velocidad doble en `running`.
   - **RF:** RF-4.
   - **Hecho cuando:** sobre la misma ruta y duración, `running` recorre el doble de distancia que `walking` sin modificar la ruta.
 
-- [ ] 13. Integrar los hitos de llegada, segundos de carrera y agotamiento en el avance de movimiento.
+- [x] 13. Integrar los hitos de llegada, segundos de carrera y agotamiento en el avance de movimiento.
   - **RF:** RF-4, RF-5.
   - **Hecho cuando:** un pulso de movimiento puede procesar llegadas y consumo, y pasa a `walking` al bajar de 13 sin salto ni ajuste al centro del tile.
 
-- [ ] 14. Probar la velocidad de carrera, el agotamiento de 13 a 12 y la continuidad a mitad de tramo.
+- [x] 14. Probar la velocidad de carrera, el agotamiento de 13 a 12 y la continuidad a mitad de tramo.
   - **RF:** RF-4, RF-5.
   - **Hecho cuando:** las pruebas confirman velocidad doble, transición automática a pie y conservación de la posición continua y ruta pendiente.
 
-- [ ] 15. Extender las órdenes con una referencia activa para destinos vacíos y objetivos contextuales.
+- [x] 15. Extender las órdenes con una referencia activa para destinos vacíos y objetivos contextuales.
   - **RF:** RF-2, RF-4.
   - **Hecho cuando:** una orden válida conserva como referencia el tile de destino vacío o el objetivo contextual originalmente seleccionado.
 
-- [ ] 16. Implementar la activación de carrera al repetir la referencia activa durante `walking` con al menos 13 de stamina.
+- [x] 16. Implementar la activación de carrera al repetir la referencia activa durante `walking` con al menos 13 de stamina.
   - **RF:** RF-4.
   - **Hecho cuando:** repetir la referencia activa cambia solo de `walking` a `running` con stamina suficiente y con menos de 13 conserva `walking`.
 
-- [ ] 17. Implementar el tratamiento de órdenes durante `running` y redirecciones.
+- [x] 17. Implementar el tratamiento de órdenes durante `running` y redirecciones.
   - **RF:** RF-2, RF-4, RF-5.
   - **Hecho cuando:** repetir la referencia activa mantiene sin cambios la carrera, mientras una referencia distinta sustituye la ruta y comienza caminando desde la posición continua actual.
 
-- [ ] 18. Implementar la cancelación de una orden activa cuando la nueva referencia no tenga ruta válida.
+- [x] 18. Implementar la cancelación de una orden activa cuando la nueva referencia no tenga ruta válida.
   - **RF:** RF-2.
   - **Hecho cuando:** un destino u objetivo sin ruta elimina la ruta y referencia activas y deja al personaje en `idle`.
 
-- [ ] 19. Probar referencias activas, inicio de carrera, repetición durante carrera, redirección y ruta inválida.
+- [x] 19. Probar referencias activas, inicio de carrera, repetición durante carrera, redirección y ruta inválida.
   - **RF:** RF-2, RF-4, RF-5.
   - **Hecho cuando:** las pruebas cubren destino vacío, objetivo contextual, stamina 12 y 13, repetición en `running`, redirección continua y cancelación por ruta inválida.
 
-- [ ] 20. Ajustar la resolución de llegada para objetivos contextuales invalidados durante una carrera.
+- [x] 20. Ajustar la resolución de llegada para objetivos contextuales invalidados durante una carrera.
   - **RF:** RF-2, RF-4.
   - **Hecho cuando:** si el objetivo deja de estar disponible durante `running`, el personaje completa la ruta y no ejecuta la acción al llegar.
 
-- [ ] 21. Integrar las transiciones de inicio y fin de acciones contextuales con la pausa y reanudación de recuperación.
+- [x] 21. Integrar las transiciones de inicio y fin de acciones contextuales con la pausa y reanudación de recuperación.
   - **RF:** RF-6.
   - **Hecho cuando:** una acción activa no recupera stamina y, al terminar o cancelarse, el progreso previo queda disponible al volver a un estado recuperable.
 

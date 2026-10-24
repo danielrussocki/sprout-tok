@@ -2,9 +2,52 @@ import { describe, expect, it } from "vitest";
 
 import { cancelActiveAction, completeAction, harvestCrop, plantCrop, startAction } from "./actions";
 import { resultMessages } from "./messages";
+import { recoverStamina } from "./stamina";
 import { createNewGame } from "./world";
 
 describe("action cycle", () => {
+  it("pauses recovery during an action and resumes its prior progress after completion", () => {
+    const game = {
+      ...createNewGame(() => 0),
+      stamina: { value: 12, recoveryProgressMs: 10_000, runningProgressMs: 0 },
+    };
+    const startedGame = startAction(game, "action-1", "chopping", { x: 4, y: 1 }, 1_000);
+    const pausedGame = {
+      ...startedGame,
+      stamina: recoverStamina(startedGame.stamina!, 30_000, startedGame.character.state),
+    };
+    const completedGame = completeAction(pausedGame, "action-1", 4_000);
+
+    expect(pausedGame.stamina).toEqual(game.stamina);
+    expect(completedGame.character.state).toBe("idle");
+    expect(recoverStamina(completedGame.stamina!, 5_000, completedGame.character.state)).toEqual({
+      value: 13,
+      recoveryProgressMs: 0,
+      runningProgressMs: 0,
+    });
+  });
+
+  it("pauses recovery during an action and resumes its prior progress after cancellation", () => {
+    const game = {
+      ...createNewGame(() => 0),
+      stamina: { value: 12, recoveryProgressMs: 10_000, runningProgressMs: 0 },
+    };
+    const startedGame = startAction(game, "action-1", "chopping", { x: 4, y: 1 }, 1_000);
+    const pausedGame = {
+      ...startedGame,
+      stamina: recoverStamina(startedGame.stamina!, 30_000, startedGame.character.state),
+    };
+    const cancelledGame = cancelActiveAction(pausedGame);
+
+    expect(pausedGame.stamina).toEqual(game.stamina);
+    expect(cancelledGame.character.state).toBe("idle");
+    expect(recoverStamina(cancelledGame.stamina!, 5_000, cancelledGame.character.state)).toEqual({
+      value: 13,
+      recoveryProgressMs: 0,
+      runningProgressMs: 0,
+    });
+  });
+
   it("adds exactly one log only after a valid chopping action completes", () => {
     const target = { x: 4, y: 1 };
     const game = {

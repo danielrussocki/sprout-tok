@@ -48,6 +48,20 @@ describe("consumeRunningStamina", () => {
     });
   });
 
+  it("does not consume stamina when a run arrives before the next complete second", () => {
+    const stamina = {
+      value: 13,
+      recoveryProgressMs: 0,
+      runningProgressMs: 700,
+    };
+
+    expect(consumeRunningStamina(stamina, 299)).toEqual({
+      value: 13,
+      recoveryProgressMs: 0,
+      runningProgressMs: 999,
+    });
+  });
+
   it("carries a partial running second into a later run", () => {
     const stamina = {
       value: 13,
@@ -67,6 +81,20 @@ describe("consumeRunningStamina", () => {
       value: 12,
       recoveryProgressMs: 0,
       runningProgressMs: 0,
+    });
+  });
+
+  it("keeps stamina at zero when complete running seconds exceed the remaining value", () => {
+    const stamina = {
+      value: 1,
+      recoveryProgressMs: 0,
+      runningProgressMs: 600,
+    };
+
+    expect(consumeRunningStamina(stamina, 2_500)).toEqual({
+      value: 0,
+      recoveryProgressMs: 0,
+      runningProgressMs: 100,
     });
   });
 });

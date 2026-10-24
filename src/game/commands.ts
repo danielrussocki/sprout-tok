@@ -7,9 +7,9 @@ import {
 } from "./messages";
 import { advanceMovementUntil, arriveAtDestination, assignDestination } from "./movement";
 import { findClosestWalkableAdjacentParcel, isValidDestination } from "./navigation";
-import { normalizeTime } from "./time";
+import { canWaterCrop, normalizeTime } from "./time";
 import type { Coordinate, Direction, GameState, InteractionTarget } from "./model";
-import { getInteractionTargetAt } from "./world";
+import { getInteractionTargetAt, isOccupied } from "./world";
 
 function clearPendingInteraction(game: GameState): GameState {
   return { ...game, pendingTarget: undefined };
@@ -22,6 +22,7 @@ function setIdle(game: GameState): GameState {
     destination: undefined,
     route: undefined,
     movement: undefined,
+    activeReference: undefined,
     pendingTarget: undefined,
   };
 }
@@ -55,6 +56,62 @@ function isSoilTarget(game: GameState, target: InteractionTarget): boolean {
         tile.position.x === target.position.x &&
         tile.position.y === target.position.y,
     )
+  );
+}
+
+function isInteractionTargetAvailable(
+  game: GameState,
+  target: InteractionTarget,
+  now: number,
+): boolean {
+  if (target.kind === "tree") {
+    return game.trees.some(
+      (tree) =>
+        tree.status === "available" &&
+        tree.position.x === target.position.x &&
+        tree.position.y === target.position.y,
+    );
+  }
+
+  if (target.kind === "crop") {
+    return game.crops.some(
+      (crop) =>
+        crop.position.x === target.position.x &&
+        crop.position.y === target.position.y &&
+        (crop.stage === 4 || canWaterCrop(crop, now)),
+    );
+  }
+
+  const parcel = game.map.tiles.find(
+    (tile) => tile.position.x === target.position.x && tile.position.y === target.position.y,
+  );
+
+  return parcel?.kind === "soil" && (!parcel.tilled || !isOccupied(game, target.position));
+}
+
+function hasSamePosition(first: Coordinate, second: Coordinate): boolean {
+  return first.x === second.x && first.y === second.y;
+}
+
+function isActiveReferenceSelected(game: GameState, position: Coordinate): boolean {
+  const activeReference = game.activeReference;
+
+  if (activeReference === undefined) {
+    return false;
+  }
+
+  const target = getInteractionTargetAt(game, position);
+
+  if (target === undefined || (target.kind === "parcel" && !isSoilTarget(game, target))) {
+    return (
+      activeReference.kind === "destination" && hasSamePosition(activeReference.position, position)
+    );
+  }
+
+  return (
+    activeReference.kind === "interaction" &&
+    activeReference.target.kind === target.kind &&
+    hasSamePosition(activeReference.target.position, target.position)
   );
 }
 
@@ -130,6 +187,22 @@ export function selectPosition(game: GameState, position: Coordinate, now: numbe
   const movedGame = advanceMovementUntil(game, now);
   const normalizedGame = normalizeTime(movedGame, now);
 
+  if (
+    normalizedGame.character.state === "walking" &&
+    isActiveReferenceSelected(normalizedGame, position)
+  ) {
+    return normalizedGame.stamina?.value !== undefined && normalizedGame.stamina.value >= 13
+      ? { ...normalizedGame, character: { ...normalizedGame.character, state: "running" } }
+      : normalizedGame;
+  }
+
+  if (
+    normalizedGame.character.state === "running" &&
+    isActiveReferenceSelected(normalizedGame, position)
+  ) {
+    return normalizedGame;
+  }
+
   if (normalizedGame.activeAction !== undefined) {
     return setIdle(cancelActiveAction(normalizedGame));
   }
@@ -181,9 +254,13 @@ export function advanceMovement(
   const movedGame = advanceMovementUntil(game, now);
   const target = movedGame.pendingTarget;
 
-  return target === undefined || movedGame.destination !== undefined
-    ? movedGame
-    : beginInteraction(movedGame, target, now, actionId);
+  if (target === undefined || movedGame.destination !== undefined) {
+    return movedGame;
+  }
+
+  return isInteractionTargetAvailable(movedGame, target, now)
+    ? beginInteraction(movedGame, target, now, actionId)
+    : setIdle(movedGame);
 }
 
 export function arriveForInteraction(
@@ -194,7 +271,11 @@ export function arriveForInteraction(
   const arrivedGame = arriveAtDestination(game);
   const target = arrivedGame.pendingTarget;
 
-  return target === undefined || arrivedGame.destination !== undefined
-    ? arrivedGame
-    : beginInteraction(arrivedGame, target, now, actionId);
+  if (target === undefined || arrivedGame.destination !== undefined) {
+    return arrivedGame;
+  }
+
+  return isInteractionTargetAvailable(arrivedGame, target, now)
+    ? beginInteraction(arrivedGame, target, now, actionId)
+    : setIdle(arrivedGame);
 }

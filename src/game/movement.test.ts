@@ -168,6 +168,66 @@ describe("arriveAtDestination", () => {
 });
 
 describe("advanceMovementUntil", () => {
+  it("processes arrivals and running consumption before continuing on foot after exhaustion", () => {
+    const runningGame = {
+      ...assignDestination(
+        createNewGame(() => 0),
+        { x: 7, y: 0 },
+        undefined,
+        1_000,
+      ),
+      character: {
+        ...createNewGame(() => 0).character,
+        state: "running" as const,
+      },
+      stamina: {
+        value: 13,
+        recoveryProgressMs: 0,
+        runningProgressMs: 0,
+      },
+    };
+
+    const updatedGame = advanceMovementUntil(runningGame, 2_175);
+
+    expect(updatedGame.character).toEqual({
+      position: { x: 6, y: 0 },
+      facing: "east",
+      state: "walking",
+    });
+    expect(updatedGame.stamina).toEqual({
+      value: 12,
+      recoveryProgressMs: 0,
+      runningProgressMs: 0,
+    });
+    expect(updatedGame.movement).toEqual({
+      continuousPosition: { x: 87 / 14, y: 0 },
+      activeSegment: { start: { x: 87 / 14, y: 0 }, end: { x: 7, y: 0 } },
+      remainingRoute: [],
+      lastAdvancedAt: 2_175,
+    });
+    expect(updatedGame.route).toEqual([{ x: 7, y: 0 }]);
+  });
+
+  it("moves twice as far while running as while walking over the same route and duration", () => {
+    const walkingGame = assignDestination(
+      createNewGame(() => 0),
+      { x: 2, y: 0 },
+      undefined,
+      1_000,
+    );
+    const runningGame = {
+      ...walkingGame,
+      character: { ...walkingGame.character, state: "running" as const },
+    };
+
+    const afterWalking = advanceMovementUntil(walkingGame, 1_087.5);
+    const afterRunning = advanceMovementUntil(runningGame, 1_087.5);
+
+    expect(afterWalking.movement?.continuousPosition).toEqual({ x: 0.25, y: 0 });
+    expect(afterRunning.movement?.continuousPosition).toEqual({ x: 0.5, y: 0 });
+    expect(afterRunning.route).toEqual(walkingGame.route);
+  });
+
   it("updates the continuous position without confirming the next parcel before it is reached", () => {
     const walkingGame = assignDestination(
       createNewGame(() => 0),

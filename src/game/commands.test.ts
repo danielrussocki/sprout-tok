@@ -25,6 +25,134 @@ describe("game commands", () => {
     expect(updatedGame.destination).toEqual({ x: 0, y: 1 });
   });
 
+  it("keeps the selected empty tile or contextual target as the active reference", () => {
+    const game = createNewGame(() => 0);
+
+    const emptyDestinationGame = selectPosition(game, { x: 0, y: 1 }, 1_000);
+    const contextualTargetGame = selectPosition(game, { x: 4, y: 1 }, 1_000);
+
+    expect(emptyDestinationGame.activeReference).toEqual({
+      kind: "destination",
+      position: { x: 0, y: 1 },
+    });
+    expect(contextualTargetGame.activeReference).toEqual({
+      kind: "interaction",
+      target: { kind: "tree", position: { x: 4, y: 1 } },
+    });
+  });
+
+  it("starts running when repeating the active reference while walking with 13 stamina", () => {
+    const walkingGame = selectPosition(
+      createNewGame(() => 0),
+      { x: 2, y: 0 },
+      1_000,
+    );
+    const gameWithMinimumRunningStamina = {
+      ...walkingGame,
+      stamina: { ...walkingGame.stamina!, value: 13 },
+    };
+
+    const runningGame = selectPosition(gameWithMinimumRunningStamina, { x: 2, y: 0 }, 1_000);
+
+    expect(runningGame).toEqual({
+      ...gameWithMinimumRunningStamina,
+      character: { ...gameWithMinimumRunningStamina.character, state: "running" },
+    });
+  });
+
+  it("starts running when repeating an active contextual target with 13 stamina", () => {
+    const walkingGame = selectPosition(
+      createNewGame(() => 0),
+      { x: 4, y: 1 },
+      1_000,
+    );
+    const gameWithMinimumRunningStamina = {
+      ...walkingGame,
+      stamina: { ...walkingGame.stamina!, value: 13 },
+    };
+
+    const runningGame = selectPosition(gameWithMinimumRunningStamina, { x: 4, y: 1 }, 1_000);
+
+    expect(runningGame.character.state).toBe("running");
+    expect(runningGame.activeReference).toEqual({
+      kind: "interaction",
+      target: { kind: "tree", position: { x: 4, y: 1 } },
+    });
+    expect(runningGame.movement).toEqual(gameWithMinimumRunningStamina.movement);
+  });
+
+  it("keeps walking when repeating the active reference with fewer than 13 stamina", () => {
+    const walkingGame = selectPosition(
+      createNewGame(() => 0),
+      { x: 2, y: 0 },
+      1_000,
+    );
+    const gameWithInsufficientStamina = {
+      ...walkingGame,
+      stamina: { ...walkingGame.stamina!, value: 12 },
+    };
+
+    const updatedGame = selectPosition(gameWithInsufficientStamina, { x: 2, y: 0 }, 1_000);
+
+    expect(updatedGame).toEqual(gameWithInsufficientStamina);
+  });
+
+  it("keeps running unchanged when repeating the active reference", () => {
+    const walkingGame = selectPosition(
+      createNewGame(() => 0),
+      { x: 2, y: 0 },
+      1_000,
+    );
+    const runningGame = selectPosition(walkingGame, { x: 2, y: 0 }, 1_000);
+
+    const updatedGame = selectPosition(runningGame, { x: 2, y: 0 }, 1_000);
+
+    expect(updatedGame).toEqual(runningGame);
+  });
+
+  it("redirects from a continuous running position and resumes walking", () => {
+    const walkingGame = selectPosition(
+      createNewGame(() => 0),
+      { x: 2, y: 0 },
+      1_000,
+    );
+    const runningGame = selectPosition(walkingGame, { x: 2, y: 0 }, 1_000);
+
+    const redirectedGame = selectPosition(runningGame, { x: 0, y: 2 }, 1_087.5);
+
+    expect(redirectedGame.character.state).toBe("walking");
+    expect(redirectedGame.activeReference).toEqual({
+      kind: "destination",
+      position: { x: 0, y: 2 },
+    });
+    expect(redirectedGame.movement).toEqual({
+      continuousPosition: { x: 0.5, y: 0 },
+      activeSegment: { start: { x: 0.5, y: 0 }, end: { x: 1, y: 0 } },
+      remainingRoute: [
+        { x: 0, y: 0 },
+        { x: 0, y: 1 },
+        { x: 0, y: 2 },
+      ],
+      lastAdvancedAt: 1_087.5,
+    });
+  });
+
+  it("cancels the active order when a new destination has no valid route", () => {
+    const walkingGame = selectPosition(
+      createNewGame(() => 0),
+      { x: 2, y: 0 },
+      1_000,
+    );
+
+    const cancelledGame = selectPosition(walkingGame, { x: -1, y: 0 }, 1_000);
+
+    expect(cancelledGame.character.state).toBe("idle");
+    expect(cancelledGame.destination).toBeUndefined();
+    expect(cancelledGame.route).toBeUndefined();
+    expect(cancelledGame.movement).toBeUndefined();
+    expect(cancelledGame.activeReference).toBeUndefined();
+  });
+
   it("walks to an adjacent parcel before starting a contextual action", () => {
     const game = createNewGame(() => 0);
 
@@ -135,6 +263,36 @@ describe("game commands", () => {
       target: { x: 4, y: 1 },
       completesAt: 5_400,
     });
+  });
+
+  it("completes a running route without acting when its contextual target becomes unavailable", () => {
+    const walkingGame = selectPosition(
+      createNewGame(() => 0),
+      { x: 4, y: 1 },
+      1_000,
+    );
+    const runningGame = selectPosition(walkingGame, { x: 4, y: 1 }, 1_000);
+    const gameWithReducedTarget = {
+      ...runningGame,
+      trees: runningGame.trees.map((tree) =>
+        tree.id === "tree-1" ? { ...tree, status: "reduced" as const, reducedAt: 1_100 } : tree,
+      ),
+    };
+
+    const updatedGame = advanceMovement(gameWithReducedTarget, 1_700, "chop-tree");
+
+    expect(updatedGame.character).toEqual({
+      position: { x: 4, y: 0 },
+      facing: "south",
+      state: "idle",
+    });
+    expect(updatedGame.destination).toBeUndefined();
+    expect(updatedGame.route).toBeUndefined();
+    expect(updatedGame.movement).toBeUndefined();
+    expect(updatedGame.activeReference).toBeUndefined();
+    expect(updatedGame.pendingTarget).toBeUndefined();
+    expect(updatedGame.activeAction).toBeUndefined();
+    expect(updatedGame.message).toBeUndefined();
   });
 
   it("accepts cultivable soil through the contextual tilling flow", () => {
@@ -305,31 +463,6 @@ describe("game commands", () => {
       continuousPosition: { x: 0.5, y: 0 },
       activeSegment: { start: { x: 0.5, y: 0 }, end: { x: 1, y: 0 } },
     });
-  });
-
-  it("keeps the exact continuous position when repeatedly selecting the same destination", () => {
-    const walkingGame = selectPosition(
-      createNewGame(() => 0),
-      { x: 2, y: 0 },
-      1_000,
-    );
-    const firstSelection = selectPosition(walkingGame, { x: 2, y: 0 }, 1_175);
-    const repeatedSelection = selectPosition(firstSelection, { x: 2, y: 0 }, 1_225);
-
-    expect(repeatedSelection.character.position).toEqual({ x: 0, y: 0 });
-    expect(repeatedSelection.destination).toEqual({ x: 2, y: 0 });
-    expect(repeatedSelection.movement?.continuousPosition.x).toBeCloseTo(0.6428571428571429);
-    expect(repeatedSelection.movement).toMatchObject({
-      activeSegment: {
-        end: { x: 1, y: 0 },
-      },
-      lastAdvancedAt: 1_225,
-    });
-    expect(repeatedSelection.movement?.activeSegment.start.x).toBeCloseTo(0.6428571428571429);
-    expect(repeatedSelection.movement?.activeSegment.start.y).toBe(0);
-    expect(repeatedSelection.movement?.activeSegment.start).not.toEqual(
-      repeatedSelection.character.position,
-    );
   });
 
   it("reports an unreachable target in Spanish when it has no walkable adjacent parcel", () => {

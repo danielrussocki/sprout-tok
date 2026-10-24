@@ -7,6 +7,7 @@ import type {
   InteractionTarget,
   Parcel,
 } from "./model";
+import { maximumStamina } from "./stamina";
 
 const mapWidth = 8;
 const mapHeight = 6;
@@ -73,6 +74,11 @@ export function createNewGame(
       position: { x: 0, y: 0 },
       facing: "east",
       state: "idle",
+    },
+    stamina: {
+      value: maximumStamina,
+      recoveryProgressMs: 0,
+      runningProgressMs: 0,
     },
     trees: [
       { id: "tree-1", position: { x: 4, y: 1 }, status: "available" },

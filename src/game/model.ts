@@ -10,7 +10,13 @@ export interface ContinuousPosition {
 
 export type Direction = "north" | "east" | "south" | "west";
 
-export type CharacterState = "idle" | "walking" | "tilling dirt" | "chopping" | "watering";
+export type CharacterState =
+  | "idle"
+  | "walking"
+  | "running"
+  | "tilling dirt"
+  | "chopping"
+  | "watering";
 
 export interface Character {
   position: Coordinate;
@@ -95,9 +101,20 @@ export type InteractionTarget =
   | { kind: "tree"; position: Coordinate }
   | { kind: "crop"; position: Coordinate };
 
+export type ActiveReference =
+  | { kind: "destination"; position: Coordinate }
+  | { kind: "interaction"; target: InteractionTarget };
+
+export interface Stamina {
+  value: number;
+  recoveryProgressMs: number;
+  runningProgressMs: number;
+}
+
 export interface GameState {
   map: GameMap;
   character: Character;
+  stamina?: Stamina;
   trees: Tree[];
   crops: Crop[];
   inventory: Inventory;
@@ -105,6 +122,7 @@ export interface GameState {
   destination?: Coordinate;
   route?: Coordinate[];
   movement?: Movement;
+  activeReference?: ActiveReference;
   pendingTarget?: InteractionTarget;
   activeAction?: ActiveAction;
   message?: string;

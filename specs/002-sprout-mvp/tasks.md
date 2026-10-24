@@ -1,42 +1,42 @@
 # Tareas: segundo MVP de Sprout Tok
 
-- [ ] 01. Extender los tipos de dominio con stamina, progreso de recuperación, fracción de carrera, `running` y referencia activa.
+- [x] 01. Extender los tipos de dominio con stamina, progreso de recuperación, fracción de carrera, `running` y referencia activa.
   - **RF:** RF-3, RF-4, RF-5, RF-6, RF-7.
   - **Hecho cuando:** el modelo distingue datos persistentes de movimiento transitorio y representa todos los valores de stamina sin tipos implícitos.
 
-- [ ] 02. Inicializar la stamina de una partida nueva en 36 y normalizar sus límites inclusivos de 0 a 36.
+- [x] 02. Inicializar la stamina de una partida nueva en 36 y normalizar sus límites inclusivos de 0 a 36.
   - **RF:** RF-3.
   - **Hecho cuando:** una partida nueva devuelve stamina 36 y ninguna regla puede devolver un valor inferior a 0 o superior a 36.
 
-- [ ] 03. Crear pruebas unitarias de creación de partida y límites de stamina.
+- [x] 03. Crear pruebas unitarias de creación de partida y límites de stamina.
   - **RF:** RF-3.
   - **Hecho cuando:** las pruebas cubren stamina inicial, límite inferior y límite superior con resultados deterministas.
 
-- [ ] 04. Implementar la regla pura de recuperación de stamina para `idle` cada 15 segundos.
+- [x] 04. Implementar la regla pura de recuperación de stamina para `idle` cada 15 segundos.
   - **RF:** RF-3, RF-6.
   - **Hecho cuando:** un acumulador de 15 segundos completos en `idle` recupera exactamente un punto sin exceder 36.
 
-- [ ] 05. Implementar la recuperación de stamina para `walking` cada 30 segundos y la conservación del progreso al alternar entre `idle` y `walking`.
+- [x] 05. Implementar la recuperación de stamina para `walking` cada 30 segundos y la conservación del progreso al alternar entre `idle` y `walking`.
   - **RF:** RF-6.
   - **Hecho cuando:** la regla conserva el tiempo parcial entre ambos estados y aplica la cadencia del estado vigente.
 
-- [ ] 06. Implementar la pausa de recuperación durante `running` y acciones contextuales.
+- [x] 06. Implementar la pausa de recuperación durante `running` y acciones contextuales.
   - **RF:** RF-6.
   - **Hecho cuando:** al entrar en carrera o en una acción se conserva el progreso parcial sin incrementarlo y se reanuda solo en `idle` o `walking`.
 
-- [ ] 07. Implementar el reinicio del progreso de recuperación al alcanzar 36 y el descarte de intervalos excedentes.
+- [x] 07. Implementar el reinicio del progreso de recuperación al alcanzar 36 y el descarte de intervalos excedentes.
   - **RF:** RF-3, RF-6.
   - **Hecho cuando:** alcanzar 36 deja el progreso de recuperación en cero, incluso si el mismo pulso contenía intervalos adicionales.
 
-- [ ] 08. Probar recuperación, pausas, alternancia de estado, máximo y múltiples intervalos.
+- [x] 08. Probar recuperación, pausas, alternancia de estado, máximo y múltiples intervalos.
   - **RF:** RF-3, RF-6.
   - **Hecho cuando:** las pruebas cubren 15 s en `idle`, 30 s en `walking`, pausas, cambio exacto de estado y llegada a 36.
 
-- [ ] 09. Implementar la regla pura de acumulación y consumo de stamina por segundos completos de carrera.
+- [x] 09. Implementar la regla pura de acumulación y consumo de stamina por segundos completos de carrera.
   - **RF:** RF-5.
   - **Hecho cuando:** cada segundo completo acumulado descuenta exactamente un punto y la fracción restante se conserva sin reducir stamina aún.
 
-- [ ] 10. Implementar la conservación de la fracción de carrera entre trayectos.
+- [x] 10. Implementar la conservación de la fracción de carrera entre trayectos.
   - **RF:** RF-5, RF-7.
   - **Hecho cuando:** una carrera interrumpida conserva su fracción y una carrera posterior la usa para completar el siguiente segundo de consumo.
 

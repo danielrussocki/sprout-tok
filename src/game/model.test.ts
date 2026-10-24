@@ -1,6 +1,7 @@
 import { describe, expectTypeOf, it } from "vitest";
 
 import type {
+  ActiveReference,
   ActiveAction,
   Character,
   ContinuousPosition,
@@ -9,9 +10,11 @@ import type {
   Direction,
   GameState,
   Inventory,
+  InteractionTarget,
   Movement,
   MovementSegment,
   Parcel,
+  Stamina,
   Tree,
 } from "./model";
 
@@ -24,7 +27,7 @@ describe("game domain model", () => {
     expectTypeOf<Character>().toMatchTypeOf<{
       position: Coordinate;
       facing: Direction;
-      state: "idle" | "walking" | "tilling dirt" | "chopping" | "watering";
+      state: "idle" | "walking" | "running" | "tilling dirt" | "chopping" | "watering";
     }>();
     expectTypeOf<Parcel>().toMatchTypeOf<{
       position: Coordinate;
@@ -59,13 +62,28 @@ describe("game domain model", () => {
       remainingRoute: Coordinate[];
       lastAdvancedAt: number;
     }>();
+    expectTypeOf<Stamina>().toEqualTypeOf<{
+      value: number;
+      recoveryProgressMs: number;
+      runningProgressMs: number;
+    }>();
+    expectTypeOf<Extract<ActiveReference, { kind: "destination" }>>().toEqualTypeOf<{
+      kind: "destination";
+      position: Coordinate;
+    }>();
+    expectTypeOf<Extract<ActiveReference, { kind: "interaction" }>>().toEqualTypeOf<{
+      kind: "interaction";
+      target: InteractionTarget;
+    }>();
     expectTypeOf<GameState>().toMatchTypeOf<{
       character: Character;
+      stamina?: Stamina;
       trees: Tree[];
       crops: Crop[];
       inventory: Inventory;
       lastTreeGenerationAttemptAt: number;
       movement?: Movement;
+      activeReference?: ActiveReference;
       activeAction?: ActiveAction;
     }>();
   });

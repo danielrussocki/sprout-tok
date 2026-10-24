@@ -7,6 +7,7 @@ interface StatusPanelProps {
 const stateLabels: Record<GameState["character"]["state"], string> = {
   idle: "En espera",
   walking: "Caminando",
+  running: "Corriendo",
   "tilling dirt": "Labrando",
   chopping: "Talando",
   watering: "Regando",

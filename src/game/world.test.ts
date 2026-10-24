@@ -64,6 +64,16 @@ describe("createNewGame", () => {
     expect(game.inventory).toEqual({ crop: 0, log: 0 });
   });
 
+  it("initializes stamina at its maximum value", () => {
+    const game = createNewGame(() => 0);
+
+    expect(game.stamina).toEqual({
+      value: 36,
+      recoveryProgressMs: 0,
+      runningProgressMs: 0,
+    });
+  });
+
   it("initializes the last tree generation attempt at the received time", () => {
     const game = createNewGame(() => 0, 1_767_225_300_000);
 

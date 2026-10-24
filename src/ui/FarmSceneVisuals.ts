@@ -50,6 +50,7 @@ export const characterVisuals: Record<
 > = {
   idle: { color: 0x2454a6, marker: "ring", label: "quieto" },
   walking: { color: 0x147fa8, marker: "stride", label: "caminando" },
+  running: { color: 0x147fa8, marker: "stride", label: "corriendo" },
   "tilling dirt": { color: 0x9a5a23, marker: "hoe", label: "labrando" },
   chopping: { color: 0xb93e32, marker: "axe", label: "talando" },
   watering: { color: 0x315fc0, marker: "drops", label: "regando" },
